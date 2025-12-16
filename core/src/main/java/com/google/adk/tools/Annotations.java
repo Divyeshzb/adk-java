@@ -26,16 +26,20 @@ import java.lang.annotation.Target;
 /** Annotations for tools. */
 public final class Annotations {
 
-  /** The annotation for binding the 'Schema' input. */
-  @Target({METHOD, PARAMETER})
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface Schema {
-    String name() default "";
+	/** The annotation for binding the 'Schema' input. */
+	@Target({ METHOD, PARAMETER })
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface Schema {
 
-    String description() default "";
+		String name() default "";
 
-    boolean optional() default false;
-  }
+		String description() default "";
 
-  private Annotations() {}
+		boolean optional() default false;
+
+	}
+
+	private Annotations() {
+	}
+
 }

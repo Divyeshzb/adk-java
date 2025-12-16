@@ -21,4 +21,5 @@ import com.google.adk.memory.MemoryEntry;
 import java.util.List;
 
 /** The response from a load memory tool invocation. */
-public record LoadMemoryResponse(@JsonProperty("memories") List<MemoryEntry> memories) {}
+public record LoadMemoryResponse(@JsonProperty("memories") List<MemoryEntry> memories) {
+}

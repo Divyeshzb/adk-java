@@ -9,13 +9,15 @@ import io.reactivex.rxjava3.core.Completable;
 import java.util.List;
 
 /**
- * A built-in tool that is automatically invoked by Gemini 2 models to retrieve search results from
- * Google Maps.
+ * A built-in tool that is automatically invoked by Gemini 2 models to retrieve search
+ * results from Google Maps.
  *
- * <p>This tool operates internally within the model and does not require or perform local code
- * execution.
+ * <p>
+ * This tool operates internally within the model and does not require or perform local
+ * code execution.
  *
- * <p>Usage example in an LlmAgent:
+ * <p>
+ * Usage example in an LlmAgent:
  *
  * <pre>{@code
  * LlmAgent agent = LlmAgent.builder()
@@ -23,7 +25,8 @@ import java.util.List;
  *     .build();
  * }</pre>
  *
- * <p>You can pass specific latitude and longitude coordinates, via the <code>
+ * <p>
+ * You can pass specific latitude and longitude coordinates, via the <code>
  * generateContentConfig()</code> method of the `LlmAgent` build:
  *
  * <pre>
@@ -43,37 +46,37 @@ import java.util.List;
  * </pre>
  */
 public class GoogleMapsTool extends BaseTool {
-  public static final GoogleMapsTool INSTANCE = new GoogleMapsTool();
 
-  public GoogleMapsTool() {
-    super("google_maps", "google_maps");
-  }
+	public static final GoogleMapsTool INSTANCE = new GoogleMapsTool();
 
-  @Override
-  public Completable processLlmRequest(
-      LlmRequest.Builder llmRequestBuilder, ToolContext toolContext) {
+	public GoogleMapsTool() {
+		super("google_maps", "google_maps");
+	}
 
-    GenerateContentConfig.Builder configBuilder =
-        llmRequestBuilder
-            .build()
-            .config()
-            .map(GenerateContentConfig::toBuilder)
-            .orElse(GenerateContentConfig.builder());
+	@Override
+	public Completable processLlmRequest(LlmRequest.Builder llmRequestBuilder, ToolContext toolContext) {
 
-    List<Tool> existingTools = configBuilder.build().tools().orElse(ImmutableList.of());
-    ImmutableList.Builder<Tool> updatedToolsBuilder = ImmutableList.builder();
-    updatedToolsBuilder.addAll(existingTools);
+		GenerateContentConfig.Builder configBuilder = llmRequestBuilder.build()
+			.config()
+			.map(GenerateContentConfig::toBuilder)
+			.orElse(GenerateContentConfig.builder());
 
-    String model = llmRequestBuilder.build().model().orElse(null);
-    if (model != null && !model.startsWith("gemini-1")) {
-      updatedToolsBuilder.add(Tool.builder().googleMaps(GoogleMaps.builder().build()).build());
-      configBuilder.tools(updatedToolsBuilder.build());
-    } else {
-      return Completable.error(
-          new IllegalArgumentException("Google Maps tool is not supported for model " + model));
-    }
+		List<Tool> existingTools = configBuilder.build().tools().orElse(ImmutableList.of());
+		ImmutableList.Builder<Tool> updatedToolsBuilder = ImmutableList.builder();
+		updatedToolsBuilder.addAll(existingTools);
 
-    llmRequestBuilder.config(configBuilder.build());
-    return Completable.complete();
-  }
+		String model = llmRequestBuilder.build().model().orElse(null);
+		if (model != null && !model.startsWith("gemini-1")) {
+			updatedToolsBuilder.add(Tool.builder().googleMaps(GoogleMaps.builder().build()).build());
+			configBuilder.tools(updatedToolsBuilder.build());
+		}
+		else {
+			return Completable
+				.error(new IllegalArgumentException("Google Maps tool is not supported for model " + model));
+		}
+
+		llmRequestBuilder.config(configBuilder.build());
+		return Completable.complete();
+	}
+
 }

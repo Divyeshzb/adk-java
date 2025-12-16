@@ -36,267 +36,241 @@ import org.slf4j.LoggerFactory;
 /**
  * A plugin that logs important information at each callback point.
  *
- * <p>This plugin helps printing all critical events in the console.
+ * <p>
+ * This plugin helps printing all critical events in the console.
  */
 public class LoggingPlugin extends BasePlugin {
-  private static final Logger logger = LoggerFactory.getLogger(LoggingPlugin.class);
-  private static final int MAX_CONTENT_LENGTH = 200;
-  private static final int MAX_ARGS_LENGTH = 300;
 
-  public LoggingPlugin(String name) {
-    super(name);
-  }
+	private static final Logger logger = LoggerFactory.getLogger(LoggingPlugin.class);
 
-  public LoggingPlugin() {
-    super("logging_plugin");
-  }
+	private static final int MAX_CONTENT_LENGTH = 200;
 
-  private void log(String message) {
-    logger.info("[{}] {}", name, message);
-  }
+	private static final int MAX_ARGS_LENGTH = 300;
 
-  @Override
-  public Maybe<Content> onUserMessageCallback(
-      InvocationContext invocationContext, Content userMessage) {
-    return Maybe.fromAction(
-        () -> {
-          log("🚀 USER MESSAGE RECEIVED");
-          log("   Invocation ID: " + invocationContext.invocationId());
-          log("   Session ID: " + invocationContext.session().id());
-          log("   User ID: " + invocationContext.userId());
-          log("   App Name: " + invocationContext.appName());
-          log("   Root Agent: " + invocationContext.agent().name());
-          log("   User Content: " + formatContent(Optional.ofNullable(userMessage)));
-          invocationContext.branch().ifPresent(branch -> log("   Branch: " + branch));
-        });
-  }
+	public LoggingPlugin(String name) {
+		super(name);
+	}
 
-  @Override
-  public Maybe<Content> beforeRunCallback(InvocationContext invocationContext) {
-    return Maybe.fromAction(
-        () -> {
-          log("🏃 INVOCATION STARTING");
-          log("   Invocation ID: " + invocationContext.invocationId());
-          log("   Starting Agent: " + invocationContext.agent().name());
-        });
-  }
+	public LoggingPlugin() {
+		super("logging_plugin");
+	}
 
-  @Override
-  public Maybe<Event> onEventCallback(InvocationContext invocationContext, Event event) {
-    return Maybe.fromAction(
-        () -> {
-          log("📢 EVENT YIELDED");
-          log("   Event ID: " + event.id());
-          log("   Author: " + event.author());
-          log("   Content: " + formatContent(event.content()));
-          log("   Final Response: " + event.finalResponse());
+	private void log(String message) {
+		logger.info("[{}] {}", name, message);
+	}
 
-          if (!event.functionCalls().isEmpty()) {
-            String funcCalls =
-                event.functionCalls().stream()
-                    .map(fc -> fc.name().orElse("Unknown"))
-                    .collect(joining(", "));
-            log("   Function Calls: [" + funcCalls + "]");
-          }
+	@Override
+	public Maybe<Content> onUserMessageCallback(InvocationContext invocationContext, Content userMessage) {
+		return Maybe.fromAction(() -> {
+			log("🚀 USER MESSAGE RECEIVED");
+			log("   Invocation ID: " + invocationContext.invocationId());
+			log("   Session ID: " + invocationContext.session().id());
+			log("   User ID: " + invocationContext.userId());
+			log("   App Name: " + invocationContext.appName());
+			log("   Root Agent: " + invocationContext.agent().name());
+			log("   User Content: " + formatContent(Optional.ofNullable(userMessage)));
+			invocationContext.branch().ifPresent(branch -> log("   Branch: " + branch));
+		});
+	}
 
-          if (!event.functionResponses().isEmpty()) {
-            String funcResponses =
-                event.functionResponses().stream()
-                    .map(fr -> fr.name().orElse("Unknown"))
-                    .collect(joining(", "));
-            log("   Function Responses: [" + funcResponses + "]");
-          }
+	@Override
+	public Maybe<Content> beforeRunCallback(InvocationContext invocationContext) {
+		return Maybe.fromAction(() -> {
+			log("🏃 INVOCATION STARTING");
+			log("   Invocation ID: " + invocationContext.invocationId());
+			log("   Starting Agent: " + invocationContext.agent().name());
+		});
+	}
 
-          event
-              .longRunningToolIds()
-              .ifPresent(
-                  ids -> {
-                    if (!ids.isEmpty()) {
-                      log("   Long Running Tools: " + ids);
-                    }
-                  });
-        });
-  }
+	@Override
+	public Maybe<Event> onEventCallback(InvocationContext invocationContext, Event event) {
+		return Maybe.fromAction(() -> {
+			log("📢 EVENT YIELDED");
+			log("   Event ID: " + event.id());
+			log("   Author: " + event.author());
+			log("   Content: " + formatContent(event.content()));
+			log("   Final Response: " + event.finalResponse());
 
-  @Override
-  public Completable afterRunCallback(InvocationContext invocationContext) {
-    return Completable.fromAction(
-        () -> {
-          log("✅ INVOCATION COMPLETED");
-          log("   Invocation ID: " + invocationContext.invocationId());
-          log("   Final Agent: " + invocationContext.agent().name());
-        });
-  }
+			if (!event.functionCalls().isEmpty()) {
+				String funcCalls = event.functionCalls()
+					.stream()
+					.map(fc -> fc.name().orElse("Unknown"))
+					.collect(joining(", "));
+				log("   Function Calls: [" + funcCalls + "]");
+			}
 
-  @Override
-  public Maybe<Content> beforeAgentCallback(BaseAgent agent, CallbackContext callbackContext) {
-    return Maybe.fromAction(
-        () -> {
-          log("🤖 AGENT STARTING");
-          log("   Agent Name: " + agent.name());
-          log("   Invocation ID: " + callbackContext.invocationId());
-          callbackContext.branch().ifPresent(branch -> log("   Branch: " + branch));
-        });
-  }
+			if (!event.functionResponses().isEmpty()) {
+				String funcResponses = event.functionResponses()
+					.stream()
+					.map(fr -> fr.name().orElse("Unknown"))
+					.collect(joining(", "));
+				log("   Function Responses: [" + funcResponses + "]");
+			}
 
-  @Override
-  public Maybe<Content> afterAgentCallback(BaseAgent agent, CallbackContext callbackContext) {
-    return Maybe.fromAction(
-        () -> {
-          log("🤖 AGENT COMPLETED");
-          log("   Agent Name: " + agent.name());
-          log("   Invocation ID: " + callbackContext.invocationId());
-        });
-  }
+			event.longRunningToolIds().ifPresent(ids -> {
+				if (!ids.isEmpty()) {
+					log("   Long Running Tools: " + ids);
+				}
+			});
+		});
+	}
 
-  @Override
-  public Maybe<LlmResponse> beforeModelCallback(
-      CallbackContext callbackContext, LlmRequest llmRequest) {
-    return Maybe.fromAction(
-        () -> {
-          log("🧠 LLM REQUEST");
-          log("   Model: " + llmRequest.model().orElse("default"));
-          log("   Agent: " + callbackContext.agentName());
+	@Override
+	public Completable afterRunCallback(InvocationContext invocationContext) {
+		return Completable.fromAction(() -> {
+			log("✅ INVOCATION COMPLETED");
+			log("   Invocation ID: " + invocationContext.invocationId());
+			log("   Final Agent: " + invocationContext.agent().name());
+		});
+	}
 
-          llmRequest
-              .getFirstSystemInstruction()
-              .ifPresent(
-                  sysInstruction -> {
-                    String truncatedInstruction = sysInstruction;
-                    if (truncatedInstruction.length() > MAX_CONTENT_LENGTH) {
-                      truncatedInstruction =
-                          truncatedInstruction.substring(0, MAX_CONTENT_LENGTH) + "...";
-                    }
-                    log("   System Instruction: '" + truncatedInstruction + "'");
-                  });
+	@Override
+	public Maybe<Content> beforeAgentCallback(BaseAgent agent, CallbackContext callbackContext) {
+		return Maybe.fromAction(() -> {
+			log("🤖 AGENT STARTING");
+			log("   Agent Name: " + agent.name());
+			log("   Invocation ID: " + callbackContext.invocationId());
+			callbackContext.branch().ifPresent(branch -> log("   Branch: " + branch));
+		});
+	}
 
-          if (!llmRequest.tools().isEmpty()) {
-            String toolNames = String.join(", ", llmRequest.tools().keySet());
-            log("   Available Tools: [" + toolNames + "]");
-          }
-        });
-  }
+	@Override
+	public Maybe<Content> afterAgentCallback(BaseAgent agent, CallbackContext callbackContext) {
+		return Maybe.fromAction(() -> {
+			log("🤖 AGENT COMPLETED");
+			log("   Agent Name: " + agent.name());
+			log("   Invocation ID: " + callbackContext.invocationId());
+		});
+	}
 
-  @Override
-  public Maybe<LlmResponse> afterModelCallback(
-      CallbackContext callbackContext, LlmResponse llmResponse) {
-    return Maybe.fromAction(
-        () -> {
-          log("🧠 LLM RESPONSE");
-          log("   Agent: " + callbackContext.agentName());
+	@Override
+	public Maybe<LlmResponse> beforeModelCallback(CallbackContext callbackContext, LlmRequest llmRequest) {
+		return Maybe.fromAction(() -> {
+			log("🧠 LLM REQUEST");
+			log("   Model: " + llmRequest.model().orElse("default"));
+			log("   Agent: " + callbackContext.agentName());
 
-          if (llmResponse.errorCode().isPresent()) {
-            log("   ❌ ERROR - Code: " + llmResponse.errorCode().get());
-            llmResponse.errorMessage().ifPresent(msg -> log("   Error Message: " + msg));
-          } else {
-            log("   Content: " + formatContent(llmResponse.content()));
-            llmResponse.partial().ifPresent(partial -> log("   Partial: " + partial));
-            llmResponse
-                .turnComplete()
-                .ifPresent(turnComplete -> log("   Turn Complete: " + turnComplete));
-          }
+			llmRequest.getFirstSystemInstruction().ifPresent(sysInstruction -> {
+				String truncatedInstruction = sysInstruction;
+				if (truncatedInstruction.length() > MAX_CONTENT_LENGTH) {
+					truncatedInstruction = truncatedInstruction.substring(0, MAX_CONTENT_LENGTH) + "...";
+				}
+				log("   System Instruction: '" + truncatedInstruction + "'");
+			});
 
-          llmResponse
-              .usageMetadata()
-              .ifPresent(
-                  usage -> {
-                    log(
-                        "   Token Usage - Input: "
-                            + usage.promptTokenCount()
-                            + ", Output: "
-                            + usage.candidatesTokenCount());
-                  });
-        });
-  }
+			if (!llmRequest.tools().isEmpty()) {
+				String toolNames = String.join(", ", llmRequest.tools().keySet());
+				log("   Available Tools: [" + toolNames + "]");
+			}
+		});
+	}
 
-  @Override
-  public Maybe<LlmResponse> onModelErrorCallback(
-      CallbackContext callbackContext, LlmRequest llmRequest, Throwable error) {
-    return Maybe.fromAction(
-        () -> {
-          log("🧠 LLM ERROR");
-          log("   Agent: " + callbackContext.agentName());
-          log("   Error: " + error.getMessage());
-          logger.error("[{}] LLM Error", name, error);
-        });
-  }
+	@Override
+	public Maybe<LlmResponse> afterModelCallback(CallbackContext callbackContext, LlmResponse llmResponse) {
+		return Maybe.fromAction(() -> {
+			log("🧠 LLM RESPONSE");
+			log("   Agent: " + callbackContext.agentName());
 
-  @Override
-  public Maybe<Map<String, Object>> beforeToolCallback(
-      BaseTool tool, Map<String, Object> toolArgs, ToolContext toolContext) {
-    return Maybe.fromAction(
-        () -> {
-          log("🔧 TOOL STARTING");
-          log("   Tool Name: " + tool.name());
-          log("   Agent: " + toolContext.agentName());
-          toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
-          log("   Arguments: " + formatArgs(toolArgs));
-        });
-  }
+			if (llmResponse.errorCode().isPresent()) {
+				log("   ❌ ERROR - Code: " + llmResponse.errorCode().get());
+				llmResponse.errorMessage().ifPresent(msg -> log("   Error Message: " + msg));
+			}
+			else {
+				log("   Content: " + formatContent(llmResponse.content()));
+				llmResponse.partial().ifPresent(partial -> log("   Partial: " + partial));
+				llmResponse.turnComplete().ifPresent(turnComplete -> log("   Turn Complete: " + turnComplete));
+			}
 
-  @Override
-  public Maybe<Map<String, Object>> afterToolCallback(
-      BaseTool tool,
-      Map<String, Object> toolArgs,
-      ToolContext toolContext,
-      Map<String, Object> result) {
-    return Maybe.fromAction(
-        () -> {
-          log("🔧 TOOL COMPLETED");
-          log("   Tool Name: " + tool.name());
-          log("   Agent: " + toolContext.agentName());
-          toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
-          log("   Result: " + formatArgs(result));
-        });
-  }
+			llmResponse.usageMetadata().ifPresent(usage -> {
+				log("   Token Usage - Input: " + usage.promptTokenCount() + ", Output: "
+						+ usage.candidatesTokenCount());
+			});
+		});
+	}
 
-  @Override
-  public Maybe<Map<String, Object>> onToolErrorCallback(
-      BaseTool tool, Map<String, Object> toolArgs, ToolContext toolContext, Throwable error) {
-    return Maybe.fromAction(
-        () -> {
-          log("🔧 TOOL ERROR");
-          log("   Tool Name: " + tool.name());
-          log("   Agent: " + toolContext.agentName());
-          toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
-          log("   Arguments: " + formatArgs(toolArgs));
-          log("   Error: " + error.getMessage());
-          logger.error("[{}] Tool Error", name, error);
-        });
-  }
+	@Override
+	public Maybe<LlmResponse> onModelErrorCallback(CallbackContext callbackContext, LlmRequest llmRequest,
+			Throwable error) {
+		return Maybe.fromAction(() -> {
+			log("🧠 LLM ERROR");
+			log("   Agent: " + callbackContext.agentName());
+			log("   Error: " + error.getMessage());
+			logger.error("[{}] LLM Error", name, error);
+		});
+	}
 
-  private String formatContent(Optional<Content> contentOptional) {
-    if (contentOptional.isEmpty()) {
-      return "None";
-    }
-    Content content = contentOptional.get();
-    if (content.parts().isEmpty() || content.parts().get().isEmpty()) {
-      return "None";
-    }
+	@Override
+	public Maybe<Map<String, Object>> beforeToolCallback(BaseTool tool, Map<String, Object> toolArgs,
+			ToolContext toolContext) {
+		return Maybe.fromAction(() -> {
+			log("🔧 TOOL STARTING");
+			log("   Tool Name: " + tool.name());
+			log("   Agent: " + toolContext.agentName());
+			toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
+			log("   Arguments: " + formatArgs(toolArgs));
+		});
+	}
 
-    String combinedText =
-        content.parts().get().stream()
-            .map(part -> part.text().orElse(""))
-            .collect(joining("\n"))
-            .trim();
+	@Override
+	public Maybe<Map<String, Object>> afterToolCallback(BaseTool tool, Map<String, Object> toolArgs,
+			ToolContext toolContext, Map<String, Object> result) {
+		return Maybe.fromAction(() -> {
+			log("🔧 TOOL COMPLETED");
+			log("   Tool Name: " + tool.name());
+			log("   Agent: " + toolContext.agentName());
+			toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
+			log("   Result: " + formatArgs(result));
+		});
+	}
 
-    if (combinedText.length() > MAX_CONTENT_LENGTH) {
-      return combinedText.substring(0, MAX_CONTENT_LENGTH) + "...";
-    }
-    return combinedText;
-  }
+	@Override
+	public Maybe<Map<String, Object>> onToolErrorCallback(BaseTool tool, Map<String, Object> toolArgs,
+			ToolContext toolContext, Throwable error) {
+		return Maybe.fromAction(() -> {
+			log("🔧 TOOL ERROR");
+			log("   Tool Name: " + tool.name());
+			log("   Agent: " + toolContext.agentName());
+			toolContext.functionCallId().ifPresent(id -> log("   Function Call ID: " + id));
+			log("   Arguments: " + formatArgs(toolArgs));
+			log("   Error: " + error.getMessage());
+			logger.error("[{}] Tool Error", name, error);
+		});
+	}
 
-  private String formatArgs(Map<String, Object> args) {
-    if (args == null || args.isEmpty()) {
-      return "{}";
-    }
-    String argsStr =
-        args.entrySet().stream()
-            .map(entry -> entry.getKey() + "=" + entry.getValue())
-            .collect(joining(", "));
-    if (argsStr.length() > MAX_ARGS_LENGTH) {
-      return "{" + argsStr.substring(0, MAX_ARGS_LENGTH) + "...}";
-    }
-    return "{" + argsStr + "}";
-  }
+	private String formatContent(Optional<Content> contentOptional) {
+		if (contentOptional.isEmpty()) {
+			return "None";
+		}
+		Content content = contentOptional.get();
+		if (content.parts().isEmpty() || content.parts().get().isEmpty()) {
+			return "None";
+		}
+
+		String combinedText = content.parts()
+			.get()
+			.stream()
+			.map(part -> part.text().orElse(""))
+			.collect(joining("\n"))
+			.trim();
+
+		if (combinedText.length() > MAX_CONTENT_LENGTH) {
+			return combinedText.substring(0, MAX_CONTENT_LENGTH) + "...";
+		}
+		return combinedText;
+	}
+
+	private String formatArgs(Map<String, Object> args) {
+		if (args == null || args.isEmpty()) {
+			return "{}";
+		}
+		String argsStr = args.entrySet()
+			.stream()
+			.map(entry -> entry.getKey() + "=" + entry.getValue())
+			.collect(joining(", "));
+		if (argsStr.length() > MAX_ARGS_LENGTH) {
+			return "{" + argsStr.substring(0, MAX_ARGS_LENGTH) + "...}";
+		}
+		return "{" + argsStr + "}";
+	}
+
 }

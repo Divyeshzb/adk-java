@@ -37,106 +37,108 @@ import java.util.Optional;
 /** AgentTool implements a tool that allows an agent to call another agent. */
 public class AgentTool extends BaseTool {
 
-  private final BaseAgent agent;
-  private final boolean skipSummarization;
+	private final BaseAgent agent;
 
-  public static AgentTool create(BaseAgent agent, boolean skipSummarization) {
-    return new AgentTool(agent, skipSummarization);
-  }
+	private final boolean skipSummarization;
 
-  public static AgentTool create(BaseAgent agent) {
-    return new AgentTool(agent, false);
-  }
+	public static AgentTool create(BaseAgent agent, boolean skipSummarization) {
+		return new AgentTool(agent, skipSummarization);
+	}
 
-  protected AgentTool(BaseAgent agent, boolean skipSummarization) {
-    super(agent.name(), agent.description());
-    this.agent = agent;
-    this.skipSummarization = skipSummarization;
-  }
+	public static AgentTool create(BaseAgent agent) {
+		return new AgentTool(agent, false);
+	}
 
-  @Override
-  public Optional<FunctionDeclaration> declaration() {
-    FunctionDeclaration.Builder builder =
-        FunctionDeclaration.builder().description(this.description()).name(this.name());
+	protected AgentTool(BaseAgent agent, boolean skipSummarization) {
+		super(agent.name(), agent.description());
+		this.agent = agent;
+		this.skipSummarization = skipSummarization;
+	}
 
-    Optional<Schema> agentInputSchema = Optional.empty();
-    if (agent instanceof LlmAgent llmAgent) {
-      agentInputSchema = llmAgent.inputSchema();
-    }
+	@Override
+	public Optional<FunctionDeclaration> declaration() {
+		FunctionDeclaration.Builder builder = FunctionDeclaration.builder()
+			.description(this.description())
+			.name(this.name());
 
-    if (agentInputSchema.isPresent()) {
-      builder.parameters(agentInputSchema.get());
-    } else {
-      builder.parameters(
-          Schema.builder()
-              .type("OBJECT")
-              .properties(ImmutableMap.of("request", Schema.builder().type("STRING").build()))
-              .required(ImmutableList.of("request"))
-              .build());
-    }
-    return Optional.of(builder.build());
-  }
+		Optional<Schema> agentInputSchema = Optional.empty();
+		if (agent instanceof LlmAgent llmAgent) {
+			agentInputSchema = llmAgent.inputSchema();
+		}
 
-  @Override
-  public Single<Map<String, Object>> runAsync(Map<String, Object> args, ToolContext toolContext) {
+		if (agentInputSchema.isPresent()) {
+			builder.parameters(agentInputSchema.get());
+		}
+		else {
+			builder.parameters(Schema.builder()
+				.type("OBJECT")
+				.properties(ImmutableMap.of("request", Schema.builder().type("STRING").build()))
+				.required(ImmutableList.of("request"))
+				.build());
+		}
+		return Optional.of(builder.build());
+	}
 
-    if (this.skipSummarization) {
-      toolContext.actions().setSkipSummarization(true);
-    }
+	@Override
+	public Single<Map<String, Object>> runAsync(Map<String, Object> args, ToolContext toolContext) {
 
-    Optional<Schema> agentInputSchema = Optional.empty();
-    if (agent instanceof LlmAgent llmAgent) {
-      agentInputSchema = llmAgent.inputSchema();
-    }
+		if (this.skipSummarization) {
+			toolContext.actions().setSkipSummarization(true);
+		}
 
-    final Content content;
-    if (agentInputSchema.isPresent()) {
-      SchemaUtils.validateMapOnSchema(args, agentInputSchema.get(), true);
-      try {
-        content =
-            Content.fromParts(Part.fromText(JsonBaseModel.getMapper().writeValueAsString(args)));
-      } catch (JsonProcessingException e) {
-        return Single.error(
-            new RuntimeException("Error serializing tool arguments to JSON: " + args, e));
-      }
-    } else {
-      Object input = args.get("request");
-      content = Content.fromParts(Part.fromText(input.toString()));
-    }
+		Optional<Schema> agentInputSchema = Optional.empty();
+		if (agent instanceof LlmAgent llmAgent) {
+			agentInputSchema = llmAgent.inputSchema();
+		}
 
-    Runner runner = new InMemoryRunner(this.agent, toolContext.agentName());
-    // Session state is final, can't update to toolContext state
-    // session.toBuilder().setState(toolContext.getState());
-    return runner
-        .sessionService()
-        .createSession(toolContext.agentName(), "tmp-user", toolContext.state(), null)
-        .flatMapPublisher(session -> runner.runAsync(session.userId(), session.id(), content))
-        .lastElement()
-        .map(Optional::of)
-        .defaultIfEmpty(Optional.empty())
-        .map(
-            optionalLastEvent -> {
-              if (optionalLastEvent.isEmpty()) {
-                return ImmutableMap.of();
-              }
-              Event lastEvent = optionalLastEvent.get();
-              Optional<String> outputText = lastEvent.content().map(Content::text);
+		final Content content;
+		if (agentInputSchema.isPresent()) {
+			SchemaUtils.validateMapOnSchema(args, agentInputSchema.get(), true);
+			try {
+				content = Content.fromParts(Part.fromText(JsonBaseModel.getMapper().writeValueAsString(args)));
+			}
+			catch (JsonProcessingException e) {
+				return Single.error(new RuntimeException("Error serializing tool arguments to JSON: " + args, e));
+			}
+		}
+		else {
+			Object input = args.get("request");
+			content = Content.fromParts(Part.fromText(input.toString()));
+		}
 
-              if (outputText.isEmpty()) {
-                return ImmutableMap.of();
-              }
-              String output = outputText.get();
+		Runner runner = new InMemoryRunner(this.agent, toolContext.agentName());
+		// Session state is final, can't update to toolContext state
+		// session.toBuilder().setState(toolContext.getState());
+		return runner.sessionService()
+			.createSession(toolContext.agentName(), "tmp-user", toolContext.state(), null)
+			.flatMapPublisher(session -> runner.runAsync(session.userId(), session.id(), content))
+			.lastElement()
+			.map(Optional::of)
+			.defaultIfEmpty(Optional.empty())
+			.map(optionalLastEvent -> {
+				if (optionalLastEvent.isEmpty()) {
+					return ImmutableMap.of();
+				}
+				Event lastEvent = optionalLastEvent.get();
+				Optional<String> outputText = lastEvent.content().map(Content::text);
 
-              Optional<Schema> agentOutputSchema = Optional.empty();
-              if (agent instanceof LlmAgent llmAgent) {
-                agentOutputSchema = llmAgent.outputSchema();
-              }
+				if (outputText.isEmpty()) {
+					return ImmutableMap.of();
+				}
+				String output = outputText.get();
 
-              if (agentOutputSchema.isPresent()) {
-                return SchemaUtils.validateOutputSchema(output, agentOutputSchema.get());
-              } else {
-                return ImmutableMap.of("result", output);
-              }
-            });
-  }
+				Optional<Schema> agentOutputSchema = Optional.empty();
+				if (agent instanceof LlmAgent llmAgent) {
+					agentOutputSchema = llmAgent.outputSchema();
+				}
+
+				if (agentOutputSchema.isPresent()) {
+					return SchemaUtils.validateOutputSchema(output, agentOutputSchema.get());
+				}
+				else {
+					return ImmutableMap.of("result", output);
+				}
+			});
+	}
+
 }

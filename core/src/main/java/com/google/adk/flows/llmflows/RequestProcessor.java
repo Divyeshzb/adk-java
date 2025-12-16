@@ -25,36 +25,39 @@ import io.reactivex.rxjava3.core.Single;
 /** Interface for processing LLM requests. */
 public interface RequestProcessor {
 
-  /** Result of request processing. */
-  @AutoValue
-  public abstract static class RequestProcessingResult {
-    /**
-     * Updated LLM request.
-     *
-     * <p>This is the LLM request that will be used to generate the LLM response.
-     */
-    public abstract LlmRequest updatedRequest();
+	/** Result of request processing. */
+	@AutoValue
+	public abstract static class RequestProcessingResult {
 
-    /**
-     * Events generated during processing.
-     *
-     * <p>These events are not necessarily part of the LLM request.
-     */
-    public abstract Iterable<Event> events();
+		/**
+		 * Updated LLM request.
+		 *
+		 * <p>
+		 * This is the LLM request that will be used to generate the LLM response.
+		 */
+		public abstract LlmRequest updatedRequest();
 
-    /** Creates a new {@link RequestProcessingResult}. */
-    public static RequestProcessingResult create(
-        LlmRequest updatedRequest, Iterable<Event> events) {
-      return new AutoValue_RequestProcessor_RequestProcessingResult(updatedRequest, events);
-    }
-  }
+		/**
+		 * Events generated during processing.
+		 *
+		 * <p>
+		 * These events are not necessarily part of the LLM request.
+		 */
+		public abstract Iterable<Event> events();
 
-  /**
-   * Process the LLM request as part of the pre-processing stage.
-   *
-   * @param context the invocation context.
-   * @param request the LLM request to process.
-   * @return a list of events generated during processing (if any).
-   */
-  Single<RequestProcessingResult> processRequest(InvocationContext context, LlmRequest request);
+		/** Creates a new {@link RequestProcessingResult}. */
+		public static RequestProcessingResult create(LlmRequest updatedRequest, Iterable<Event> events) {
+			return new AutoValue_RequestProcessor_RequestProcessingResult(updatedRequest, events);
+		}
+
+	}
+
+	/**
+	 * Process the LLM request as part of the pre-processing stage.
+	 * @param context the invocation context.
+	 * @param request the LLM request to process.
+	 * @return a list of events generated during processing (if any).
+	 */
+	Single<RequestProcessingResult> processRequest(InvocationContext context, LlmRequest request);
+
 }

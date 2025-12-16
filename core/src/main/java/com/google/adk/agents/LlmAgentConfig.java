@@ -24,122 +24,135 @@ import java.util.List;
 /**
  * Configuration for LlmAgent.
  *
- * <p>TODO: Config agent features are not yet ready for public use.
+ * <p>
+ * TODO: Config agent features are not yet ready for public use.
  */
 public class LlmAgentConfig extends BaseAgentConfig {
-  private String model;
-  private String instruction;
-  private Boolean disallowTransferToParent;
-  private Boolean disallowTransferToPeers;
-  private String outputKey;
-  private List<ToolConfig> tools;
-  private IncludeContents includeContents;
-  private GenerateContentConfig generateContentConfig;
 
-  // Callback configuration (names resolved via ComponentRegistry)
-  private List<CallbackRef> beforeModelCallbacks;
-  private List<CallbackRef> afterModelCallbacks;
-  private List<CallbackRef> beforeToolCallbacks;
-  private List<CallbackRef> afterToolCallbacks;
+	private String model;
 
-  public LlmAgentConfig() {
-    super("LlmAgent");
-  }
+	private String instruction;
 
-  // Accessors
-  public String model() {
-    return model;
-  }
+	private Boolean disallowTransferToParent;
 
-  public void setModel(String model) {
-    this.model = model;
-  }
+	private Boolean disallowTransferToPeers;
 
-  public String instruction() {
-    return instruction;
-  }
+	private String outputKey;
 
-  public void setInstruction(String instruction) {
-    this.instruction = instruction;
-  }
+	private List<ToolConfig> tools;
 
-  public Boolean disallowTransferToParent() {
-    return disallowTransferToParent;
-  }
+	private IncludeContents includeContents;
 
-  public void setDisallowTransferToParent(Boolean disallowTransferToParent) {
-    this.disallowTransferToParent = disallowTransferToParent;
-  }
+	private GenerateContentConfig generateContentConfig;
 
-  public Boolean disallowTransferToPeers() {
-    return disallowTransferToPeers;
-  }
+	// Callback configuration (names resolved via ComponentRegistry)
+	private List<CallbackRef> beforeModelCallbacks;
 
-  public void setDisallowTransferToPeers(Boolean disallowTransferToPeers) {
-    this.disallowTransferToPeers = disallowTransferToPeers;
-  }
+	private List<CallbackRef> afterModelCallbacks;
 
-  public String outputKey() {
-    return outputKey;
-  }
+	private List<CallbackRef> beforeToolCallbacks;
 
-  public void setOutputKey(String outputKey) {
-    this.outputKey = outputKey;
-  }
+	private List<CallbackRef> afterToolCallbacks;
 
-  public List<ToolConfig> tools() {
-    return tools;
-  }
+	public LlmAgentConfig() {
+		super("LlmAgent");
+	}
 
-  public void setTools(List<ToolConfig> tools) {
-    this.tools = tools;
-  }
+	// Accessors
+	public String model() {
+		return model;
+	}
 
-  public IncludeContents includeContents() {
-    return includeContents;
-  }
+	public void setModel(String model) {
+		this.model = model;
+	}
 
-  public void setIncludeContents(IncludeContents includeContents) {
-    this.includeContents = includeContents;
-  }
+	public String instruction() {
+		return instruction;
+	}
 
-  public GenerateContentConfig generateContentConfig() {
-    return generateContentConfig;
-  }
+	public void setInstruction(String instruction) {
+		this.instruction = instruction;
+	}
 
-  public void setGenerateContentConfig(GenerateContentConfig generateContentConfig) {
-    this.generateContentConfig = generateContentConfig;
-  }
+	public Boolean disallowTransferToParent() {
+		return disallowTransferToParent;
+	}
 
-  public List<CallbackRef> beforeModelCallbacks() {
-    return beforeModelCallbacks;
-  }
+	public void setDisallowTransferToParent(Boolean disallowTransferToParent) {
+		this.disallowTransferToParent = disallowTransferToParent;
+	}
 
-  public void setBeforeModelCallbacks(List<CallbackRef> beforeModelCallbacks) {
-    this.beforeModelCallbacks = beforeModelCallbacks;
-  }
+	public Boolean disallowTransferToPeers() {
+		return disallowTransferToPeers;
+	}
 
-  public List<CallbackRef> afterModelCallbacks() {
-    return afterModelCallbacks;
-  }
+	public void setDisallowTransferToPeers(Boolean disallowTransferToPeers) {
+		this.disallowTransferToPeers = disallowTransferToPeers;
+	}
 
-  public void setAfterModelCallbacks(List<CallbackRef> afterModelCallbacks) {
-    this.afterModelCallbacks = afterModelCallbacks;
-  }
+	public String outputKey() {
+		return outputKey;
+	}
 
-  public List<CallbackRef> beforeToolCallbacks() {
-    return beforeToolCallbacks;
-  }
+	public void setOutputKey(String outputKey) {
+		this.outputKey = outputKey;
+	}
 
-  public void setBeforeToolCallbacks(List<CallbackRef> beforeToolCallbacks) {
-    this.beforeToolCallbacks = beforeToolCallbacks;
-  }
+	public List<ToolConfig> tools() {
+		return tools;
+	}
 
-  public List<CallbackRef> afterToolCallbacks() {
-    return afterToolCallbacks;
-  }
+	public void setTools(List<ToolConfig> tools) {
+		this.tools = tools;
+	}
 
-  public void setAfterToolCallbacks(List<CallbackRef> afterToolCallbacks) {
-    this.afterToolCallbacks = afterToolCallbacks;
-  }
+	public IncludeContents includeContents() {
+		return includeContents;
+	}
+
+	public void setIncludeContents(IncludeContents includeContents) {
+		this.includeContents = includeContents;
+	}
+
+	public GenerateContentConfig generateContentConfig() {
+		return generateContentConfig;
+	}
+
+	public void setGenerateContentConfig(GenerateContentConfig generateContentConfig) {
+		this.generateContentConfig = generateContentConfig;
+	}
+
+	public List<CallbackRef> beforeModelCallbacks() {
+		return beforeModelCallbacks;
+	}
+
+	public void setBeforeModelCallbacks(List<CallbackRef> beforeModelCallbacks) {
+		this.beforeModelCallbacks = beforeModelCallbacks;
+	}
+
+	public List<CallbackRef> afterModelCallbacks() {
+		return afterModelCallbacks;
+	}
+
+	public void setAfterModelCallbacks(List<CallbackRef> afterModelCallbacks) {
+		this.afterModelCallbacks = afterModelCallbacks;
+	}
+
+	public List<CallbackRef> beforeToolCallbacks() {
+		return beforeToolCallbacks;
+	}
+
+	public void setBeforeToolCallbacks(List<CallbackRef> beforeToolCallbacks) {
+		this.beforeToolCallbacks = beforeToolCallbacks;
+	}
+
+	public List<CallbackRef> afterToolCallbacks() {
+		return afterToolCallbacks;
+	}
+
+	public void setAfterToolCallbacks(List<CallbackRef> afterToolCallbacks) {
+		this.afterToolCallbacks = afterToolCallbacks;
+	}
+
 }

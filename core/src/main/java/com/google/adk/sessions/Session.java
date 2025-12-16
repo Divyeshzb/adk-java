@@ -29,170 +29,177 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** A {@link Session} object that encapsulates the {@link State} and {@link Event}s of a session. */
+/**
+ * A {@link Session} object that encapsulates the {@link State} and {@link Event}s of a
+ * session.
+ */
 @JsonDeserialize(builder = Session.Builder.class)
 public final class Session extends JsonBaseModel {
-  private final String id;
 
-  private final String appName;
+	private final String id;
 
-  private final String userId;
+	private final String appName;
 
-  private final State state;
+	private final String userId;
 
-  private final List<Event> events;
+	private final State state;
 
-  private Instant lastUpdateTime;
+	private final List<Event> events;
 
-  public static Builder builder(String id) {
-    return new Builder(id);
-  }
+	private Instant lastUpdateTime;
 
-  /** Builder for {@link Session}. */
-  public static final class Builder {
-    private String id;
-    private String appName;
-    private String userId;
-    private State state = new State(new ConcurrentHashMap<>());
-    private List<Event> events = new ArrayList<>();
-    private Instant lastUpdateTime = Instant.EPOCH;
+	public static Builder builder(String id) {
+		return new Builder(id);
+	}
 
-    public Builder(String id) {
-      this.id = id;
-    }
+	/** Builder for {@link Session}. */
+	public static final class Builder {
 
-    @JsonCreator
-    private Builder() {}
+		private String id;
 
-    @CanIgnoreReturnValue
-    @JsonProperty("id")
-    public Builder id(String id) {
-      this.id = id;
-      return this;
-    }
+		private String appName;
 
-    @CanIgnoreReturnValue
-    public Builder state(State state) {
-      this.state = state;
-      return this;
-    }
+		private String userId;
 
-    @CanIgnoreReturnValue
-    @JsonProperty("state")
-    public Builder state(ConcurrentMap<String, Object> state) {
-      this.state = new State(state);
-      return this;
-    }
+		private State state = new State(new ConcurrentHashMap<>());
 
-    @CanIgnoreReturnValue
-    @JsonProperty("appName")
-    public Builder appName(String appName) {
-      this.appName = appName;
-      return this;
-    }
+		private List<Event> events = new ArrayList<>();
 
-    @CanIgnoreReturnValue
-    @JsonProperty("userId")
-    public Builder userId(String userId) {
-      this.userId = userId;
-      return this;
-    }
+		private Instant lastUpdateTime = Instant.EPOCH;
 
-    @CanIgnoreReturnValue
-    @JsonProperty("events")
-    public Builder events(List<Event> events) {
-      this.events = events;
-      return this;
-    }
+		public Builder(String id) {
+			this.id = id;
+		}
 
-    @CanIgnoreReturnValue
-    public Builder lastUpdateTime(Instant lastUpdateTime) {
-      this.lastUpdateTime = lastUpdateTime;
-      return this;
-    }
+		@JsonCreator
+		private Builder() {
+		}
 
-    @CanIgnoreReturnValue
-    @JsonProperty("lastUpdateTime")
-    public Builder lastUpdateTimeSeconds(double seconds) {
-      long secs = (long) seconds;
-      // Convert fractional part to nanoseconds
-      long nanos = (long) ((seconds - secs) * Duration.ofSeconds(1).toNanos());
-      this.lastUpdateTime = Instant.ofEpochSecond(secs, nanos);
-      return this;
-    }
+		@CanIgnoreReturnValue
+		@JsonProperty("id")
+		public Builder id(String id) {
+			this.id = id;
+			return this;
+		}
 
-    public Session build() {
-      if (id == null) {
-        throw new IllegalStateException("Session id is null");
-      }
-      return new Session(appName, userId, id, state, events, lastUpdateTime);
-    }
-  }
+		@CanIgnoreReturnValue
+		public Builder state(State state) {
+			this.state = state;
+			return this;
+		}
 
-  @JsonProperty("id")
-  public String id() {
-    return id;
-  }
+		@CanIgnoreReturnValue
+		@JsonProperty("state")
+		public Builder state(ConcurrentMap<String, Object> state) {
+			this.state = new State(state);
+			return this;
+		}
 
-  @JsonProperty("state")
-  public ConcurrentMap<String, Object> state() {
-    return state;
-  }
+		@CanIgnoreReturnValue
+		@JsonProperty("appName")
+		public Builder appName(String appName) {
+			this.appName = appName;
+			return this;
+		}
 
-  @JsonProperty("events")
-  public List<Event> events() {
-    return events;
-  }
+		@CanIgnoreReturnValue
+		@JsonProperty("userId")
+		public Builder userId(String userId) {
+			this.userId = userId;
+			return this;
+		}
 
-  @JsonProperty("appName")
-  public String appName() {
-    return appName;
-  }
+		@CanIgnoreReturnValue
+		@JsonProperty("events")
+		public Builder events(List<Event> events) {
+			this.events = events;
+			return this;
+		}
 
-  @JsonProperty("userId")
-  public String userId() {
-    return userId;
-  }
+		@CanIgnoreReturnValue
+		public Builder lastUpdateTime(Instant lastUpdateTime) {
+			this.lastUpdateTime = lastUpdateTime;
+			return this;
+		}
 
-  public void lastUpdateTime(Instant lastUpdateTime) {
-    this.lastUpdateTime = lastUpdateTime;
-  }
+		@CanIgnoreReturnValue
+		@JsonProperty("lastUpdateTime")
+		public Builder lastUpdateTimeSeconds(double seconds) {
+			long secs = (long) seconds;
+			// Convert fractional part to nanoseconds
+			long nanos = (long) ((seconds - secs) * Duration.ofSeconds(1).toNanos());
+			this.lastUpdateTime = Instant.ofEpochSecond(secs, nanos);
+			return this;
+		}
 
-  public Instant lastUpdateTime() {
-    return lastUpdateTime;
-  }
+		public Session build() {
+			if (id == null) {
+				throw new IllegalStateException("Session id is null");
+			}
+			return new Session(appName, userId, id, state, events, lastUpdateTime);
+		}
 
-  @JsonProperty("lastUpdateTime")
-  public double getLastUpdateTimeAsDouble() {
-    if (lastUpdateTime == null) {
-      return 0.0;
-    }
-    long seconds = lastUpdateTime.getEpochSecond();
-    int nanos = lastUpdateTime.getNano();
-    return seconds + nanos / (double) Duration.ofSeconds(1).toNanos();
-  }
+	}
 
-  @Override
-  public String toString() {
-    return toJson();
-  }
+	@JsonProperty("id")
+	public String id() {
+		return id;
+	}
 
-  public static Session fromJson(String json) {
-    return fromJsonString(json, Session.class);
-  }
+	@JsonProperty("state")
+	public ConcurrentMap<String, Object> state() {
+		return state;
+	}
 
-  private Session(
-      String appName,
-      String userId,
-      String id,
-      State state,
-      List<Event> events,
-      Instant lastUpdateTime) {
-    this.id = id;
-    this.appName = appName;
-    this.userId = userId;
-    this.state = state;
-    this.events = events;
-    this.lastUpdateTime = lastUpdateTime;
-  }
+	@JsonProperty("events")
+	public List<Event> events() {
+		return events;
+	}
+
+	@JsonProperty("appName")
+	public String appName() {
+		return appName;
+	}
+
+	@JsonProperty("userId")
+	public String userId() {
+		return userId;
+	}
+
+	public void lastUpdateTime(Instant lastUpdateTime) {
+		this.lastUpdateTime = lastUpdateTime;
+	}
+
+	public Instant lastUpdateTime() {
+		return lastUpdateTime;
+	}
+
+	@JsonProperty("lastUpdateTime")
+	public double getLastUpdateTimeAsDouble() {
+		if (lastUpdateTime == null) {
+			return 0.0;
+		}
+		long seconds = lastUpdateTime.getEpochSecond();
+		int nanos = lastUpdateTime.getNano();
+		return seconds + nanos / (double) Duration.ofSeconds(1).toNanos();
+	}
+
+	@Override
+	public String toString() {
+		return toJson();
+	}
+
+	public static Session fromJson(String json) {
+		return fromJsonString(json, Session.class);
+	}
+
+	private Session(String appName, String userId, String id, State state, List<Event> events, Instant lastUpdateTime) {
+		this.id = id;
+		this.appName = appName;
+		this.userId = userId;
+		this.state = state;
+		this.events = events;
+		this.lastUpdateTime = lastUpdateTime;
+	}
+
 }

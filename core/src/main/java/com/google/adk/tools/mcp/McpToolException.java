@@ -16,17 +16,23 @@
 
 package com.google.adk.tools.mcp;
 
-/** Base exception for all errors originating from {@code AbstractMcpTool} and its subclasses. */
+/**
+ * Base exception for all errors originating from {@code AbstractMcpTool} and its
+ * subclasses.
+ */
 public class McpToolException extends RuntimeException {
 
-  public McpToolException(String message, Throwable cause) {
-    super(message, cause);
-  }
+	public McpToolException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-  /** Exception thrown when there's an error during MCP tool declaration generated. */
-  public static class McpToolDeclarationException extends McpToolException {
-    public McpToolDeclarationException(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
+	/** Exception thrown when there's an error during MCP tool declaration generated. */
+	public static class McpToolDeclarationException extends McpToolException {
+
+		public McpToolDeclarationException(String message, Throwable cause) {
+			super(message, cause);
+		}
+
+	}
+
 }

@@ -42,536 +42,488 @@ import java.util.Set;
 
 /** {@link RequestProcessor} that populates content in request for LLM flows. */
 public final class Contents implements RequestProcessor {
-  public Contents() {}
 
-  @Override
-  public Single<RequestProcessor.RequestProcessingResult> processRequest(
-      InvocationContext context, LlmRequest request) {
-    if (!(context.agent() instanceof LlmAgent)) {
-      return Single.just(
-          RequestProcessor.RequestProcessingResult.create(request, context.session().events()));
-    }
-    LlmAgent llmAgent = (LlmAgent) context.agent();
+	public Contents() {
+	}
 
-    String modelName;
-    try {
-      modelName = llmAgent.resolvedModel().modelName().orElse("");
-    } catch (IllegalStateException e) {
-      modelName = "";
-    }
+	@Override
+	public Single<RequestProcessor.RequestProcessingResult> processRequest(InvocationContext context,
+			LlmRequest request) {
+		if (!(context.agent() instanceof LlmAgent)) {
+			return Single.just(RequestProcessor.RequestProcessingResult.create(request, context.session().events()));
+		}
+		LlmAgent llmAgent = (LlmAgent) context.agent();
 
-    if (llmAgent.includeContents() == LlmAgent.IncludeContents.NONE) {
-      return Single.just(
-          RequestProcessor.RequestProcessingResult.create(
-              request.toBuilder()
-                  .contents(
-                      getCurrentTurnContents(
-                          context.branch(),
-                          context.session().events(),
-                          context.agent().name(),
-                          modelName))
-                  .build(),
-              ImmutableList.of()));
-    }
+		String modelName;
+		try {
+			modelName = llmAgent.resolvedModel().modelName().orElse("");
+		}
+		catch (IllegalStateException e) {
+			modelName = "";
+		}
 
-    ImmutableList<Content> contents =
-        getContents(
-            context.branch(), context.session().events(), context.agent().name(), modelName);
+		if (llmAgent.includeContents() == LlmAgent.IncludeContents.NONE) {
+			return Single.just(RequestProcessor.RequestProcessingResult.create(request.toBuilder()
+				.contents(getCurrentTurnContents(context.branch(), context.session().events(), context.agent().name(),
+						modelName))
+				.build(), ImmutableList.of()));
+		}
 
-    return Single.just(
-        RequestProcessor.RequestProcessingResult.create(
-            request.toBuilder().contents(contents).build(), ImmutableList.of()));
-  }
+		ImmutableList<Content> contents = getContents(context.branch(), context.session().events(),
+				context.agent().name(), modelName);
 
-  /** Gets contents for the current turn only (no conversation history). */
-  private ImmutableList<Content> getCurrentTurnContents(
-      Optional<String> currentBranch, List<Event> events, String agentName, String modelName) {
-    // Find the latest event that starts the current turn and process from there.
-    for (int i = events.size() - 1; i >= 0; i--) {
-      Event event = events.get(i);
-      if (event.author().equals("user") || isOtherAgentReply(agentName, event)) {
-        return getContents(currentBranch, events.subList(i, events.size()), agentName, modelName);
-      }
-    }
-    return ImmutableList.of();
-  }
+		return Single.just(RequestProcessor.RequestProcessingResult
+			.create(request.toBuilder().contents(contents).build(), ImmutableList.of()));
+	}
 
-  private ImmutableList<Content> getContents(
-      Optional<String> currentBranch, List<Event> events, String agentName, String modelName) {
-    List<Event> filteredEvents = new ArrayList<>();
+	/** Gets contents for the current turn only (no conversation history). */
+	private ImmutableList<Content> getCurrentTurnContents(Optional<String> currentBranch, List<Event> events,
+			String agentName, String modelName) {
+		// Find the latest event that starts the current turn and process from there.
+		for (int i = events.size() - 1; i >= 0; i--) {
+			Event event = events.get(i);
+			if (event.author().equals("user") || isOtherAgentReply(agentName, event)) {
+				return getContents(currentBranch, events.subList(i, events.size()), agentName, modelName);
+			}
+		}
+		return ImmutableList.of();
+	}
 
-    // Filter the events, leaving the contents and the function calls and responses from the current
-    // agent.
-    for (Event event : events) {
-      // Skip events without content, or generated neither by user nor by model or has empty text.
-      // E.g. events purely for mutating session states.
-      if (event.content().isEmpty()) {
-        continue;
-      }
-      var content = event.content().get();
-      if (content.role().isEmpty()
-          || content.role().get().isEmpty()
-          || content.parts().isEmpty()
-          || content.parts().get().isEmpty()
-          || content.parts().get().get(0).text().map(String::isEmpty).orElse(false)) {
-        continue;
-      }
+	private ImmutableList<Content> getContents(Optional<String> currentBranch, List<Event> events, String agentName,
+			String modelName) {
+		List<Event> filteredEvents = new ArrayList<>();
 
-      if (!isEventBelongsToBranch(currentBranch, event)) {
-        continue;
-      }
-      if (isRequestConfirmationEvent(event)) {
-        continue;
-      }
+		// Filter the events, leaving the contents and the function calls and responses
+		// from the current
+		// agent.
+		for (Event event : events) {
+			// Skip events without content, or generated neither by user nor by model or
+			// has empty text.
+			// E.g. events purely for mutating session states.
+			if (event.content().isEmpty()) {
+				continue;
+			}
+			var content = event.content().get();
+			if (content.role().isEmpty() || content.role().get().isEmpty() || content.parts().isEmpty()
+					|| content.parts().get().isEmpty()
+					|| content.parts().get().get(0).text().map(String::isEmpty).orElse(false)) {
+				continue;
+			}
 
-      // TODO: Skip auth events.
+			if (!isEventBelongsToBranch(currentBranch, event)) {
+				continue;
+			}
+			if (isRequestConfirmationEvent(event)) {
+				continue;
+			}
 
-      if (isOtherAgentReply(agentName, event)) {
-        filteredEvents.add(convertForeignEvent(event));
-      } else {
-        filteredEvents.add(event);
-      }
-    }
+			// TODO: Skip auth events.
 
-    List<Event> resultEvents = rearrangeEventsForLatestFunctionResponse(filteredEvents);
-    resultEvents = rearrangeEventsForAsyncFunctionResponsesInHistory(resultEvents, modelName);
+			if (isOtherAgentReply(agentName, event)) {
+				filteredEvents.add(convertForeignEvent(event));
+			}
+			else {
+				filteredEvents.add(event);
+			}
+		}
 
-    return resultEvents.stream()
-        .map(Event::content)
-        .flatMap(Optional::stream)
-        .collect(toImmutableList());
-  }
+		List<Event> resultEvents = rearrangeEventsForLatestFunctionResponse(filteredEvents);
+		resultEvents = rearrangeEventsForAsyncFunctionResponsesInHistory(resultEvents, modelName);
 
-  /** Whether the event is a reply from another agent. */
-  private static boolean isOtherAgentReply(String agentName, Event event) {
-    return !agentName.isEmpty()
-        && !event.author().equals(agentName)
-        && !event.author().equals("user");
-  }
+		return resultEvents.stream().map(Event::content).flatMap(Optional::stream).collect(toImmutableList());
+	}
 
-  /** Converts an {@code event} authored by another agent to a 'contextual-only' event. */
-  private static Event convertForeignEvent(Event event) {
-    if (event.content().isEmpty()
-        || event.content().get().parts().isEmpty()
-        || event.content().get().parts().get().isEmpty()) {
-      return event;
-    }
+	/** Whether the event is a reply from another agent. */
+	private static boolean isOtherAgentReply(String agentName, Event event) {
+		return !agentName.isEmpty() && !event.author().equals(agentName) && !event.author().equals("user");
+	}
 
-    List<Part> parts = new ArrayList<>();
-    parts.add(Part.fromText("For context:"));
+	/**
+	 * Converts an {@code event} authored by another agent to a 'contextual-only' event.
+	 */
+	private static Event convertForeignEvent(Event event) {
+		if (event.content().isEmpty() || event.content().get().parts().isEmpty()
+				|| event.content().get().parts().get().isEmpty()) {
+			return event;
+		}
 
-    String originalAuthor = event.author();
+		List<Part> parts = new ArrayList<>();
+		parts.add(Part.fromText("For context:"));
 
-    for (Part part : event.content().get().parts().get()) {
-      if (part.text().isPresent()
-          && !part.text().get().isEmpty()
-          && !part.thought().orElse(false)) {
-        parts.add(Part.fromText(String.format("[%s] said: %s", originalAuthor, part.text().get())));
-      } else if (part.functionCall().isPresent()) {
-        FunctionCall functionCall = part.functionCall().get();
-        parts.add(
-            Part.fromText(
-                String.format(
-                    "[%s] called tool `%s` with parameters: %s",
-                    originalAuthor,
-                    functionCall.name().orElse("unknown_tool"),
-                    functionCall.args().map(Contents::convertMapToJson).orElse("{}"))));
-      } else if (part.functionResponse().isPresent()) {
-        FunctionResponse functionResponse = part.functionResponse().get();
-        parts.add(
-            Part.fromText(
-                String.format(
-                    "[%s] `%s` tool returned result: %s",
-                    originalAuthor,
-                    functionResponse.name().orElse("unknown_tool"),
-                    functionResponse.response().map(Contents::convertMapToJson).orElse("{}"))));
-      } else {
-        parts.add(part);
-      }
-    }
+		String originalAuthor = event.author();
 
-    Content content = Content.builder().role("user").parts(parts).build();
-    return event.toBuilder().author("user").content(content).build();
-  }
+		for (Part part : event.content().get().parts().get()) {
+			if (part.text().isPresent() && !part.text().get().isEmpty() && !part.thought().orElse(false)) {
+				parts.add(Part.fromText(String.format("[%s] said: %s", originalAuthor, part.text().get())));
+			}
+			else if (part.functionCall().isPresent()) {
+				FunctionCall functionCall = part.functionCall().get();
+				parts.add(Part.fromText(String.format("[%s] called tool `%s` with parameters: %s", originalAuthor,
+						functionCall.name().orElse("unknown_tool"),
+						functionCall.args().map(Contents::convertMapToJson).orElse("{}"))));
+			}
+			else if (part.functionResponse().isPresent()) {
+				FunctionResponse functionResponse = part.functionResponse().get();
+				parts.add(Part.fromText(String.format("[%s] `%s` tool returned result: %s", originalAuthor,
+						functionResponse.name().orElse("unknown_tool"),
+						functionResponse.response().map(Contents::convertMapToJson).orElse("{}"))));
+			}
+			else {
+				parts.add(part);
+			}
+		}
 
-  private static String convertMapToJson(Map<String, Object> struct) {
-    try {
-      return JsonBaseModel.getMapper().writeValueAsString(struct);
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException("Failed to serialize the object to JSON.", e);
-    }
-  }
+		Content content = Content.builder().role("user").parts(parts).build();
+		return event.toBuilder().author("user").content(content).build();
+	}
 
-  private static boolean isEventBelongsToBranch(Optional<String> invocationBranchOpt, Event event) {
-    Optional<String> eventBranchOpt = event.branch();
+	private static String convertMapToJson(Map<String, Object> struct) {
+		try {
+			return JsonBaseModel.getMapper().writeValueAsString(struct);
+		}
+		catch (JsonProcessingException e) {
+			throw new IllegalStateException("Failed to serialize the object to JSON.", e);
+		}
+	}
 
-    if (invocationBranchOpt.isEmpty() || invocationBranchOpt.get().isEmpty()) {
-      return true;
-    }
-    if (eventBranchOpt.isEmpty() || eventBranchOpt.get().isEmpty()) {
-      return true;
-    }
-    return invocationBranchOpt.get().startsWith(eventBranchOpt.get());
-  }
+	private static boolean isEventBelongsToBranch(Optional<String> invocationBranchOpt, Event event) {
+		Optional<String> eventBranchOpt = event.branch();
 
-  /**
-   * Rearranges the events for the latest function response. If the latest function response is for
-   * an async function call, all events between the initial function call and the latest function
-   * response will be removed.
-   *
-   * @param events The list of events.
-   * @return A new list of events with the appropriate rearrangement.
-   */
-  private static List<Event> rearrangeEventsForLatestFunctionResponse(List<Event> events) {
-    // TODO: b/412663475 - Handle parallel function calls within the same event. Currently, this
-    // throws an error.
-    if (events.isEmpty() || Iterables.getLast(events).functionResponses().isEmpty()) {
-      // No need to process if the list is empty or the last event is not a function response
-      return events;
-    }
+		if (invocationBranchOpt.isEmpty() || invocationBranchOpt.get().isEmpty()) {
+			return true;
+		}
+		if (eventBranchOpt.isEmpty() || eventBranchOpt.get().isEmpty()) {
+			return true;
+		}
+		return invocationBranchOpt.get().startsWith(eventBranchOpt.get());
+	}
 
-    Event latestEvent = Iterables.getLast(events);
-    // Extract function response IDs from the latest event
-    Set<String> functionResponseIds = new HashSet<>();
-    latestEvent
-        .content()
-        .flatMap(Content::parts)
-        .ifPresent(
-            parts -> {
-              for (Part part : parts) {
-                part.functionResponse()
-                    .flatMap(FunctionResponse::id)
-                    .ifPresent(functionResponseIds::add);
-              }
-            });
+	/**
+	 * Rearranges the events for the latest function response. If the latest function
+	 * response is for an async function call, all events between the initial function
+	 * call and the latest function response will be removed.
+	 * @param events The list of events.
+	 * @return A new list of events with the appropriate rearrangement.
+	 */
+	private static List<Event> rearrangeEventsForLatestFunctionResponse(List<Event> events) {
+		// TODO: b/412663475 - Handle parallel function calls within the same event.
+		// Currently, this
+		// throws an error.
+		if (events.isEmpty() || Iterables.getLast(events).functionResponses().isEmpty()) {
+			// No need to process if the list is empty or the last event is not a function
+			// response
+			return events;
+		}
 
-    if (functionResponseIds.isEmpty()) {
-      return events;
-    }
+		Event latestEvent = Iterables.getLast(events);
+		// Extract function response IDs from the latest event
+		Set<String> functionResponseIds = new HashSet<>();
+		latestEvent.content().flatMap(Content::parts).ifPresent(parts -> {
+			for (Part part : parts) {
+				part.functionResponse().flatMap(FunctionResponse::id).ifPresent(functionResponseIds::add);
+			}
+		});
 
-    // Check if the second to last event contains the corresponding function call
-    if (events.size() >= 2) {
-      Event penultimateEvent = events.get(events.size() - 2);
-      boolean matchFound =
-          penultimateEvent
-              .content()
-              .flatMap(Content::parts)
-              .map(
-                  parts -> {
-                    for (Part part : parts) {
-                      if (part.functionCall()
-                          .flatMap(FunctionCall::id)
-                          .map(functionResponseIds::contains)
-                          .orElse(false)) {
-                        return true; // Found a matching function call ID
-                      }
-                    }
-                    return false;
-                  })
-              .orElse(false);
-      if (matchFound) {
-        // The latest function response is already matched with the immediately preceding event
-        return events;
-      }
-    }
+		if (functionResponseIds.isEmpty()) {
+			return events;
+		}
 
-    // Look for the corresponding function call event by iterating backwards
-    int functionCallEventIndex = -1;
-    for (int i = events.size() - 3; i >= 0; i--) { // Start from third-to-last
-      Event event = events.get(i);
-      Optional<List<Part>> partsOptional = event.content().flatMap(Content::parts);
-      if (partsOptional.isPresent()) {
-        List<Part> parts = partsOptional.get();
-        for (Part part : parts) {
-          Optional<String> callIdOpt = part.functionCall().flatMap(FunctionCall::id);
-          if (callIdOpt.isPresent() && functionResponseIds.contains(callIdOpt.get())) {
-            functionCallEventIndex = i;
-            // Add all function call IDs from this event to the set
-            parts.forEach(
-                p ->
-                    p.functionCall().flatMap(FunctionCall::id).ifPresent(functionResponseIds::add));
-            break; // Found the matching event
-          }
-        }
-      }
-      if (functionCallEventIndex != -1) {
-        break; // Exit outer loop once found
-      }
-    }
+		// Check if the second to last event contains the corresponding function call
+		if (events.size() >= 2) {
+			Event penultimateEvent = events.get(events.size() - 2);
+			boolean matchFound = penultimateEvent.content().flatMap(Content::parts).map(parts -> {
+				for (Part part : parts) {
+					if (part.functionCall()
+						.flatMap(FunctionCall::id)
+						.map(functionResponseIds::contains)
+						.orElse(false)) {
+						return true; // Found a matching function call ID
+					}
+				}
+				return false;
+			}).orElse(false);
+			if (matchFound) {
+				// The latest function response is already matched with the immediately
+				// preceding event
+				return events;
+			}
+		}
 
-    if (functionCallEventIndex == -1) {
-      if (!functionResponseIds.isEmpty()) {
-        throw new IllegalStateException(
-            "No function call event found for function response IDs: " + functionResponseIds);
-      } else {
-        return events; // No IDs to match, no rearrangement based on this logic.
-      }
-    }
+		// Look for the corresponding function call event by iterating backwards
+		int functionCallEventIndex = -1;
+		for (int i = events.size() - 3; i >= 0; i--) { // Start from third-to-last
+			Event event = events.get(i);
+			Optional<List<Part>> partsOptional = event.content().flatMap(Content::parts);
+			if (partsOptional.isPresent()) {
+				List<Part> parts = partsOptional.get();
+				for (Part part : parts) {
+					Optional<String> callIdOpt = part.functionCall().flatMap(FunctionCall::id);
+					if (callIdOpt.isPresent() && functionResponseIds.contains(callIdOpt.get())) {
+						functionCallEventIndex = i;
+						// Add all function call IDs from this event to the set
+						parts.forEach(
+								p -> p.functionCall().flatMap(FunctionCall::id).ifPresent(functionResponseIds::add));
+						break; // Found the matching event
+					}
+				}
+			}
+			if (functionCallEventIndex != -1) {
+				break; // Exit outer loop once found
+			}
+		}
 
-    List<Event> resultEvents = new ArrayList<>(events.subList(0, functionCallEventIndex + 1));
+		if (functionCallEventIndex == -1) {
+			if (!functionResponseIds.isEmpty()) {
+				throw new IllegalStateException(
+						"No function call event found for function response IDs: " + functionResponseIds);
+			}
+			else {
+				return events; // No IDs to match, no rearrangement based on this logic.
+			}
+		}
 
-    // Collect all function response events between the call and the latest response
-    List<Event> functionResponseEventsToMerge = new ArrayList<>();
-    for (int i = functionCallEventIndex + 1; i < events.size() - 1; i++) {
-      Event intermediateEvent = events.get(i);
-      boolean hasMatchingResponse =
-          intermediateEvent
-              .content()
-              .flatMap(Content::parts)
-              .map(
-                  parts -> {
-                    for (Part part : parts) {
-                      if (part.functionResponse()
-                          .flatMap(FunctionResponse::id)
-                          .map(functionResponseIds::contains)
-                          .orElse(false)) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  })
-              .orElse(false);
-      if (hasMatchingResponse) {
-        functionResponseEventsToMerge.add(intermediateEvent);
-      }
-    }
-    functionResponseEventsToMerge.add(latestEvent);
+		List<Event> resultEvents = new ArrayList<>(events.subList(0, functionCallEventIndex + 1));
 
-    if (!functionResponseEventsToMerge.isEmpty()) {
-      resultEvents.add(mergeFunctionResponseEvents(functionResponseEventsToMerge));
-    }
+		// Collect all function response events between the call and the latest response
+		List<Event> functionResponseEventsToMerge = new ArrayList<>();
+		for (int i = functionCallEventIndex + 1; i < events.size() - 1; i++) {
+			Event intermediateEvent = events.get(i);
+			boolean hasMatchingResponse = intermediateEvent.content().flatMap(Content::parts).map(parts -> {
+				for (Part part : parts) {
+					if (part.functionResponse()
+						.flatMap(FunctionResponse::id)
+						.map(functionResponseIds::contains)
+						.orElse(false)) {
+						return true;
+					}
+				}
+				return false;
+			}).orElse(false);
+			if (hasMatchingResponse) {
+				functionResponseEventsToMerge.add(intermediateEvent);
+			}
+		}
+		functionResponseEventsToMerge.add(latestEvent);
 
-    return resultEvents;
-  }
+		if (!functionResponseEventsToMerge.isEmpty()) {
+			resultEvents.add(mergeFunctionResponseEvents(functionResponseEventsToMerge));
+		}
 
-  private static List<Event> rearrangeEventsForAsyncFunctionResponsesInHistory(
-      List<Event> events, String modelName) {
-    Map<String, Integer> functionCallIdToResponseEventIndex = new HashMap<>();
-    for (int i = 0; i < events.size(); i++) {
-      final int index = i;
-      Event event = events.get(index);
-      event
-          .content()
-          .flatMap(Content::parts)
-          .ifPresent(
-              parts -> {
-                for (Part part : parts) {
-                  part.functionResponse()
-                      .ifPresent(
-                          response ->
-                              response
-                                  .id()
-                                  .ifPresent(
-                                      functionCallId ->
-                                          functionCallIdToResponseEventIndex.put(
-                                              functionCallId, index)));
-                }
-              });
-    }
+		return resultEvents;
+	}
 
-    List<Event> resultEvents = new ArrayList<>();
-    // Keep track of response events already added to avoid duplicates when merging
-    Set<Integer> processedResponseIndices = new HashSet<>();
-    List<Event> responseEventsBuffer = new ArrayList<>();
+	private static List<Event> rearrangeEventsForAsyncFunctionResponsesInHistory(List<Event> events, String modelName) {
+		Map<String, Integer> functionCallIdToResponseEventIndex = new HashMap<>();
+		for (int i = 0; i < events.size(); i++) {
+			final int index = i;
+			Event event = events.get(index);
+			event.content().flatMap(Content::parts).ifPresent(parts -> {
+				for (Part part : parts) {
+					part.functionResponse()
+						.ifPresent(response -> response.id()
+							.ifPresent(
+									functionCallId -> functionCallIdToResponseEventIndex.put(functionCallId, index)));
+				}
+			});
+		}
 
-    // Gemini 3 requires function calls to be grouped first and only then function responses:
-    // FC1 FC2 FR1 FR2
-    boolean shouldBufferResponseEvents = modelName.startsWith("gemini-3-");
+		List<Event> resultEvents = new ArrayList<>();
+		// Keep track of response events already added to avoid duplicates when merging
+		Set<Integer> processedResponseIndices = new HashSet<>();
+		List<Event> responseEventsBuffer = new ArrayList<>();
 
-    for (int i = 0; i < events.size(); i++) {
-      Event event = events.get(i);
+		// Gemini 3 requires function calls to be grouped first and only then function
+		// responses:
+		// FC1 FC2 FR1 FR2
+		boolean shouldBufferResponseEvents = modelName.startsWith("gemini-3-");
 
-      // Skip response events that will be processed via responseEventsBuffer
-      if (processedResponseIndices.contains(i)) {
-        continue;
-      }
+		for (int i = 0; i < events.size(); i++) {
+			Event event = events.get(i);
 
-      Optional<List<Part>> partsOptional = event.content().flatMap(Content::parts);
-      boolean hasFunctionCalls =
-          partsOptional
-              .map(parts -> parts.stream().anyMatch(p -> p.functionCall().isPresent()))
-              .orElse(false);
+			// Skip response events that will be processed via responseEventsBuffer
+			if (processedResponseIndices.contains(i)) {
+				continue;
+			}
 
-      if (hasFunctionCalls) {
-        Set<Integer> responseEventIndices = new HashSet<>();
-        // Iterate through parts again to get function call IDs
-        partsOptional
-            .get()
-            .forEach(
-                part ->
-                    part.functionCall()
-                        .ifPresent(
-                            call ->
-                                call.id()
-                                    .ifPresent(
-                                        functionCallId -> {
-                                          if (functionCallIdToResponseEventIndex.containsKey(
-                                              functionCallId)) {
-                                            responseEventIndices.add(
-                                                functionCallIdToResponseEventIndex.get(
-                                                    functionCallId));
-                                          }
-                                        })));
+			Optional<List<Part>> partsOptional = event.content().flatMap(Content::parts);
+			boolean hasFunctionCalls = partsOptional
+				.map(parts -> parts.stream().anyMatch(p -> p.functionCall().isPresent()))
+				.orElse(false);
 
-        resultEvents.add(event); // Add the function call event
+			if (hasFunctionCalls) {
+				Set<Integer> responseEventIndices = new HashSet<>();
+				// Iterate through parts again to get function call IDs
+				partsOptional.get()
+					.forEach(part -> part.functionCall().ifPresent(call -> call.id().ifPresent(functionCallId -> {
+						if (functionCallIdToResponseEventIndex.containsKey(functionCallId)) {
+							responseEventIndices.add(functionCallIdToResponseEventIndex.get(functionCallId));
+						}
+					})));
 
-        if (!responseEventIndices.isEmpty()) {
-          List<Event> responseEventsToAdd = new ArrayList<>();
-          List<Integer> sortedIndices = new ArrayList<>(responseEventIndices);
-          Collections.sort(sortedIndices); // Process in chronological order
+				resultEvents.add(event); // Add the function call event
 
-          for (int index : sortedIndices) {
-            if (processedResponseIndices.add(index)) { // Add index and check if it was newly added
-              responseEventsBuffer.add(events.get(index));
-              responseEventsToAdd.add(events.get(index));
-            }
-          }
+				if (!responseEventIndices.isEmpty()) {
+					List<Event> responseEventsToAdd = new ArrayList<>();
+					List<Integer> sortedIndices = new ArrayList<>(responseEventIndices);
+					Collections.sort(sortedIndices); // Process in chronological order
 
-          if (!shouldBufferResponseEvents) {
-            if (responseEventsToAdd.size() == 1) {
-              resultEvents.add(responseEventsToAdd.get(0));
-            } else if (responseEventsToAdd.size() > 1) {
-              resultEvents.add(mergeFunctionResponseEvents(responseEventsToAdd));
-            }
-          }
-        }
-      } else {
-        // gemini-3 specific part: buffer response events
-        if (shouldBufferResponseEvents) {
-          if (!responseEventsBuffer.isEmpty()) {
-            if (responseEventsBuffer.size() == 1) {
-              resultEvents.add(responseEventsBuffer.get(0));
-            } else {
-              resultEvents.add(mergeFunctionResponseEvents(responseEventsBuffer));
-            }
-            responseEventsBuffer.clear();
-          }
-        }
-        resultEvents.add(event);
-      }
-    }
+					for (int index : sortedIndices) {
+						if (processedResponseIndices.add(index)) { // Add index and check
+							// if it was newly
+							// added
+							responseEventsBuffer.add(events.get(index));
+							responseEventsToAdd.add(events.get(index));
+						}
+					}
 
-    // gemini-3 specific part: buffer response events
-    if (shouldBufferResponseEvents) {
-      if (!responseEventsBuffer.isEmpty()) {
-        if (responseEventsBuffer.size() == 1) {
-          resultEvents.add(responseEventsBuffer.get(0));
-        } else {
-          resultEvents.add(mergeFunctionResponseEvents(responseEventsBuffer));
-        }
-        responseEventsBuffer.clear();
-      }
-    }
+					if (!shouldBufferResponseEvents) {
+						if (responseEventsToAdd.size() == 1) {
+							resultEvents.add(responseEventsToAdd.get(0));
+						}
+						else if (responseEventsToAdd.size() > 1) {
+							resultEvents.add(mergeFunctionResponseEvents(responseEventsToAdd));
+						}
+					}
+				}
+			}
+			else {
+				// gemini-3 specific part: buffer response events
+				if (shouldBufferResponseEvents) {
+					if (!responseEventsBuffer.isEmpty()) {
+						if (responseEventsBuffer.size() == 1) {
+							resultEvents.add(responseEventsBuffer.get(0));
+						}
+						else {
+							resultEvents.add(mergeFunctionResponseEvents(responseEventsBuffer));
+						}
+						responseEventsBuffer.clear();
+					}
+				}
+				resultEvents.add(event);
+			}
+		}
 
-    return resultEvents;
-  }
+		// gemini-3 specific part: buffer response events
+		if (shouldBufferResponseEvents) {
+			if (!responseEventsBuffer.isEmpty()) {
+				if (responseEventsBuffer.size() == 1) {
+					resultEvents.add(responseEventsBuffer.get(0));
+				}
+				else {
+					resultEvents.add(mergeFunctionResponseEvents(responseEventsBuffer));
+				}
+				responseEventsBuffer.clear();
+			}
+		}
 
-  /**
-   * Merges a list of function response events into one event.
-   *
-   * <p>The key goal is to ensure: 1. functionCall and functionResponse are always of the same
-   * number. 2. The functionCall and functionResponse are consecutively in the content.
-   *
-   * @param functionResponseEvents A list of function response events. NOTE: functionResponseEvents
-   *     must fulfill these requirements: 1. The list is in increasing order of timestamp; 2. the
-   *     first event is the initial function response event; 3. all later events should contain at
-   *     least one function response part that related to the function call event. Caveat: This
-   *     implementation doesn't support when a parallel function call event contains async function
-   *     call of the same name.
-   * @return A merged event, that is 1. All later function_response will replace function response
-   *     part in the initial function response event. 2. All non-function response parts will be
-   *     appended to the part list of the initial function response event.
-   */
-  private static Event mergeFunctionResponseEvents(List<Event> functionResponseEvents) {
-    if (functionResponseEvents.isEmpty()) {
-      throw new IllegalArgumentException("At least one functionResponse event is required.");
-    }
-    if (functionResponseEvents.size() == 1) {
-      return functionResponseEvents.get(0);
-    }
+		return resultEvents;
+	}
 
-    Event baseEvent = functionResponseEvents.get(0);
-    Content baseContent =
-        baseEvent
-            .content()
-            .orElseThrow(() -> new IllegalArgumentException("Base event must have content."));
-    List<Part> baseParts =
-        baseContent
-            .parts()
-            .orElseThrow(() -> new IllegalArgumentException("Base event content must have parts."));
+	/**
+	 * Merges a list of function response events into one event.
+	 *
+	 * <p>
+	 * The key goal is to ensure: 1. functionCall and functionResponse are always of the
+	 * same number. 2. The functionCall and functionResponse are consecutively in the
+	 * content.
+	 * @param functionResponseEvents A list of function response events. NOTE:
+	 * functionResponseEvents must fulfill these requirements: 1. The list is in
+	 * increasing order of timestamp; 2. the first event is the initial function response
+	 * event; 3. all later events should contain at least one function response part that
+	 * related to the function call event. Caveat: This implementation doesn't support
+	 * when a parallel function call event contains async function call of the same name.
+	 * @return A merged event, that is 1. All later function_response will replace
+	 * function response part in the initial function response event. 2. All non-function
+	 * response parts will be appended to the part list of the initial function response
+	 * event.
+	 */
+	private static Event mergeFunctionResponseEvents(List<Event> functionResponseEvents) {
+		if (functionResponseEvents.isEmpty()) {
+			throw new IllegalArgumentException("At least one functionResponse event is required.");
+		}
+		if (functionResponseEvents.size() == 1) {
+			return functionResponseEvents.get(0);
+		}
 
-    if (baseParts.isEmpty()) {
-      throw new IllegalArgumentException(
-          "There should be at least one functionResponse part in the base event.");
-    }
-    List<Part> partsInMergedEvent = new ArrayList<>(baseParts);
+		Event baseEvent = functionResponseEvents.get(0);
+		Content baseContent = baseEvent.content()
+			.orElseThrow(() -> new IllegalArgumentException("Base event must have content."));
+		List<Part> baseParts = baseContent.parts()
+			.orElseThrow(() -> new IllegalArgumentException("Base event content must have parts."));
 
-    Map<String, Integer> partIndicesInMergedEvent = new HashMap<>();
-    for (int i = 0; i < partsInMergedEvent.size(); i++) {
-      final int index = i;
-      Part part = partsInMergedEvent.get(i);
-      if (part.functionResponse().isPresent()) {
-        part.functionResponse()
-            .get()
-            .id()
-            .ifPresent(functionCallId -> partIndicesInMergedEvent.put(functionCallId, index));
-      }
-    }
+		if (baseParts.isEmpty()) {
+			throw new IllegalArgumentException("There should be at least one functionResponse part in the base event.");
+		}
+		List<Part> partsInMergedEvent = new ArrayList<>(baseParts);
 
-    for (Event event : functionResponseEvents.subList(1, functionResponseEvents.size())) {
-      if (!hasContentWithNonEmptyParts(event)) {
-        continue;
-      }
+		Map<String, Integer> partIndicesInMergedEvent = new HashMap<>();
+		for (int i = 0; i < partsInMergedEvent.size(); i++) {
+			final int index = i;
+			Part part = partsInMergedEvent.get(i);
+			if (part.functionResponse().isPresent()) {
+				part.functionResponse()
+					.get()
+					.id()
+					.ifPresent(functionCallId -> partIndicesInMergedEvent.put(functionCallId, index));
+			}
+		}
 
-      for (Part part : event.content().get().parts().get()) {
-        if (part.functionResponse().isPresent()) {
-          Optional<String> functionCallIdOpt = part.functionResponse().get().id();
-          if (functionCallIdOpt.isPresent()) {
-            String functionCallId = functionCallIdOpt.get();
-            if (partIndicesInMergedEvent.containsKey(functionCallId)) {
-              partsInMergedEvent.set(partIndicesInMergedEvent.get(functionCallId), part);
-            } else {
-              partsInMergedEvent.add(part);
-              partIndicesInMergedEvent.put(functionCallId, partsInMergedEvent.size() - 1);
-            }
-          } else {
-            partsInMergedEvent.add(part);
-          }
-        } else {
-          partsInMergedEvent.add(part);
-        }
-      }
-    }
+		for (Event event : functionResponseEvents.subList(1, functionResponseEvents.size())) {
+			if (!hasContentWithNonEmptyParts(event)) {
+				continue;
+			}
 
-    return baseEvent.toBuilder()
-        .content(
-            Optional.of(
-                Content.builder().role(baseContent.role().get()).parts(partsInMergedEvent).build()))
-        .build();
-  }
+			for (Part part : event.content().get().parts().get()) {
+				if (part.functionResponse().isPresent()) {
+					Optional<String> functionCallIdOpt = part.functionResponse().get().id();
+					if (functionCallIdOpt.isPresent()) {
+						String functionCallId = functionCallIdOpt.get();
+						if (partIndicesInMergedEvent.containsKey(functionCallId)) {
+							partsInMergedEvent.set(partIndicesInMergedEvent.get(functionCallId), part);
+						}
+						else {
+							partsInMergedEvent.add(part);
+							partIndicesInMergedEvent.put(functionCallId, partsInMergedEvent.size() - 1);
+						}
+					}
+					else {
+						partsInMergedEvent.add(part);
+					}
+				}
+				else {
+					partsInMergedEvent.add(part);
+				}
+			}
+		}
 
-  private static boolean hasContentWithNonEmptyParts(Event event) {
-    return event
-        .content() // Optional<Content>
-        .flatMap(Content::parts) // Optional<List<Part>>
-        .map(list -> !list.isEmpty()) // Optional<Boolean>
-        .orElse(false);
-  }
+		return baseEvent.toBuilder()
+			.content(Optional.of(Content.builder().role(baseContent.role().get()).parts(partsInMergedEvent).build()))
+			.build();
+	}
 
-  /** Checks if the event is a request confirmation event. */
-  private static boolean isRequestConfirmationEvent(Event event) {
-    return event.content().flatMap(Content::parts).stream()
-        .flatMap(List::stream)
-        // return event.content().flatMap(Content::parts).orElse(ImmutableList.of()).stream()
-        .anyMatch(
-            part ->
-                part.functionCall()
-                        .flatMap(FunctionCall::name)
-                        .map(Functions.REQUEST_CONFIRMATION_FUNCTION_CALL_NAME::equals)
-                        .orElse(false)
-                    || part.functionResponse()
-                        .flatMap(FunctionResponse::name)
-                        .map(Functions.REQUEST_CONFIRMATION_FUNCTION_CALL_NAME::equals)
-                        .orElse(false));
-  }
+	private static boolean hasContentWithNonEmptyParts(Event event) {
+		return event.content() // Optional<Content>
+			.flatMap(Content::parts) // Optional<List<Part>>
+			.map(list -> !list.isEmpty()) // Optional<Boolean>
+			.orElse(false);
+	}
+
+	/** Checks if the event is a request confirmation event. */
+	private static boolean isRequestConfirmationEvent(Event event) {
+		return event.content()
+			.flatMap(Content::parts)
+			.stream()
+			.flatMap(List::stream)
+			// return
+			// event.content().flatMap(Content::parts).orElse(ImmutableList.of()).stream()
+			.anyMatch(part -> part.functionCall()
+				.flatMap(FunctionCall::name)
+				.map(Functions.REQUEST_CONFIRMATION_FUNCTION_CALL_NAME::equals)
+				.orElse(false)
+					|| part.functionResponse()
+						.flatMap(FunctionResponse::name)
+						.map(Functions.REQUEST_CONFIRMATION_FUNCTION_CALL_NAME::equals)
+						.orElse(false));
+	}
+
 }

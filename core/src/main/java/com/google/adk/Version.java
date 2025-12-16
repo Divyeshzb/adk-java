@@ -17,12 +17,15 @@
 package com.google.adk;
 
 /**
- * Tracks the current ADK version. Useful for tracking headers. Kept as a string literal to avoid
- * coupling with the build system.
+ * Tracks the current ADK version. Useful for tracking headers. Kept as a string literal
+ * to avoid coupling with the build system.
  */
 public final class Version {
-  // Don't touch this, release-please should keep it up to date.
-  public static final String JAVA_ADK_VERSION = "0.4.0";
 
-  private Version() {}
+	// Don't touch this, release-please should keep it up to date.
+	public static final String JAVA_ADK_VERSION = "0.4.0";
+
+	private Version() {
+	}
+
 }

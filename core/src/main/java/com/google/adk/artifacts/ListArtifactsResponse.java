@@ -24,17 +24,20 @@ import java.util.List;
 @AutoValue
 public abstract class ListArtifactsResponse {
 
-  public abstract ImmutableList<String> filenames();
+	public abstract ImmutableList<String> filenames();
 
-  /** Builder for {@link ListArtifactsResponse}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
-    public abstract Builder filenames(List<String> filenames);
+	/** Builder for {@link ListArtifactsResponse}. */
+	@AutoValue.Builder
+	public abstract static class Builder {
 
-    public abstract ListArtifactsResponse build();
-  }
+		public abstract Builder filenames(List<String> filenames);
 
-  public static Builder builder() {
-    return new AutoValue_ListArtifactsResponse.Builder();
-  }
+		public abstract ListArtifactsResponse build();
+
+	}
+
+	public static Builder builder() {
+		return new AutoValue_ListArtifactsResponse.Builder();
+	}
+
 }

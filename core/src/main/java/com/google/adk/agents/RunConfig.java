@@ -29,112 +29,114 @@ import org.slf4j.LoggerFactory;
 /** Configuration to modify an agent's LLM's underlying behavior. */
 @AutoValue
 public abstract class RunConfig {
-  private static final Logger logger = LoggerFactory.getLogger(RunConfig.class);
 
-  /** Streaming mode for the runner. Required for BaseAgent.runLive() to work. */
-  public enum StreamingMode {
-    NONE,
-    SSE,
-    BIDI
-  }
+	private static final Logger logger = LoggerFactory.getLogger(RunConfig.class);
 
-  /**
-   * Tool execution mode for the runner, when they are multiple tools requested (by the models or
-   * callbacks).
-   *
-   * <p>NONE: default to PARALLEL.
-   *
-   * <p>SEQUENTIAL: Multiple tools are executed in the order they are requested.
-   *
-   * <p>PARALLEL: Multiple tools are executed in parallel.
-   */
-  public enum ToolExecutionMode {
-    NONE,
-    SEQUENTIAL,
-    PARALLEL
-  }
+	/** Streaming mode for the runner. Required for BaseAgent.runLive() to work. */
+	public enum StreamingMode {
 
-  public abstract @Nullable SpeechConfig speechConfig();
+		NONE, SSE, BIDI
 
-  public abstract ImmutableList<Modality> responseModalities();
+	}
 
-  public abstract boolean saveInputBlobsAsArtifacts();
+	/**
+	 * Tool execution mode for the runner, when they are multiple tools requested (by the
+	 * models or callbacks).
+	 *
+	 * <p>
+	 * NONE: default to PARALLEL.
+	 *
+	 * <p>
+	 * SEQUENTIAL: Multiple tools are executed in the order they are requested.
+	 *
+	 * <p>
+	 * PARALLEL: Multiple tools are executed in parallel.
+	 */
+	public enum ToolExecutionMode {
 
-  public abstract StreamingMode streamingMode();
+		NONE, SEQUENTIAL, PARALLEL
 
-  public abstract ToolExecutionMode toolExecutionMode();
+	}
 
-  public abstract @Nullable AudioTranscriptionConfig outputAudioTranscription();
+	public abstract @Nullable SpeechConfig speechConfig();
 
-  public abstract @Nullable AudioTranscriptionConfig inputAudioTranscription();
+	public abstract ImmutableList<Modality> responseModalities();
 
-  public abstract int maxLlmCalls();
+	public abstract boolean saveInputBlobsAsArtifacts();
 
-  public abstract Builder toBuilder();
+	public abstract StreamingMode streamingMode();
 
-  public static Builder builder() {
-    return new AutoValue_RunConfig.Builder()
-        .setSaveInputBlobsAsArtifacts(false)
-        .setResponseModalities(ImmutableList.of())
-        .setStreamingMode(StreamingMode.NONE)
-        .setToolExecutionMode(ToolExecutionMode.NONE)
-        .setMaxLlmCalls(500);
-  }
+	public abstract ToolExecutionMode toolExecutionMode();
 
-  public static Builder builder(RunConfig runConfig) {
-    return new AutoValue_RunConfig.Builder()
-        .setSaveInputBlobsAsArtifacts(runConfig.saveInputBlobsAsArtifacts())
-        .setStreamingMode(runConfig.streamingMode())
-        .setToolExecutionMode(runConfig.toolExecutionMode())
-        .setMaxLlmCalls(runConfig.maxLlmCalls())
-        .setResponseModalities(runConfig.responseModalities())
-        .setSpeechConfig(runConfig.speechConfig())
-        .setOutputAudioTranscription(runConfig.outputAudioTranscription())
-        .setInputAudioTranscription(runConfig.inputAudioTranscription());
-  }
+	public abstract @Nullable AudioTranscriptionConfig outputAudioTranscription();
 
-  /** Builder for {@link RunConfig}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
+	public abstract @Nullable AudioTranscriptionConfig inputAudioTranscription();
 
-    @CanIgnoreReturnValue
-    public abstract Builder setSpeechConfig(@Nullable SpeechConfig speechConfig);
+	public abstract int maxLlmCalls();
 
-    @CanIgnoreReturnValue
-    public abstract Builder setResponseModalities(Iterable<Modality> responseModalities);
+	public abstract Builder toBuilder();
 
-    @CanIgnoreReturnValue
-    public abstract Builder setSaveInputBlobsAsArtifacts(boolean saveInputBlobsAsArtifacts);
+	public static Builder builder() {
+		return new AutoValue_RunConfig.Builder().setSaveInputBlobsAsArtifacts(false)
+			.setResponseModalities(ImmutableList.of())
+			.setStreamingMode(StreamingMode.NONE)
+			.setToolExecutionMode(ToolExecutionMode.NONE)
+			.setMaxLlmCalls(500);
+	}
 
-    @CanIgnoreReturnValue
-    public abstract Builder setStreamingMode(StreamingMode streamingMode);
+	public static Builder builder(RunConfig runConfig) {
+		return new AutoValue_RunConfig.Builder().setSaveInputBlobsAsArtifacts(runConfig.saveInputBlobsAsArtifacts())
+			.setStreamingMode(runConfig.streamingMode())
+			.setToolExecutionMode(runConfig.toolExecutionMode())
+			.setMaxLlmCalls(runConfig.maxLlmCalls())
+			.setResponseModalities(runConfig.responseModalities())
+			.setSpeechConfig(runConfig.speechConfig())
+			.setOutputAudioTranscription(runConfig.outputAudioTranscription())
+			.setInputAudioTranscription(runConfig.inputAudioTranscription());
+	}
 
-    @CanIgnoreReturnValue
-    public abstract Builder setToolExecutionMode(ToolExecutionMode toolExecutionMode);
+	/** Builder for {@link RunConfig}. */
+	@AutoValue.Builder
+	public abstract static class Builder {
 
-    @CanIgnoreReturnValue
-    public abstract Builder setOutputAudioTranscription(
-        @Nullable AudioTranscriptionConfig outputAudioTranscription);
+		@CanIgnoreReturnValue
+		public abstract Builder setSpeechConfig(@Nullable SpeechConfig speechConfig);
 
-    @CanIgnoreReturnValue
-    public abstract Builder setInputAudioTranscription(
-        @Nullable AudioTranscriptionConfig inputAudioTranscription);
+		@CanIgnoreReturnValue
+		public abstract Builder setResponseModalities(Iterable<Modality> responseModalities);
 
-    @CanIgnoreReturnValue
-    public abstract Builder setMaxLlmCalls(int maxLlmCalls);
+		@CanIgnoreReturnValue
+		public abstract Builder setSaveInputBlobsAsArtifacts(boolean saveInputBlobsAsArtifacts);
 
-    abstract RunConfig autoBuild();
+		@CanIgnoreReturnValue
+		public abstract Builder setStreamingMode(StreamingMode streamingMode);
 
-    public RunConfig build() {
-      RunConfig runConfig = autoBuild();
-      if (runConfig.maxLlmCalls() < 0) {
-        logger.warn(
-            "maxLlmCalls is negative. This will result in no enforcement on total"
-                + " number of llm calls that will be made for a run. This may not be ideal, as this"
-                + " could result in a never ending communication between the model and the agent in"
-                + " certain cases.");
-      }
-      return runConfig;
-    }
-  }
+		@CanIgnoreReturnValue
+		public abstract Builder setToolExecutionMode(ToolExecutionMode toolExecutionMode);
+
+		@CanIgnoreReturnValue
+		public abstract Builder setOutputAudioTranscription(
+				@Nullable AudioTranscriptionConfig outputAudioTranscription);
+
+		@CanIgnoreReturnValue
+		public abstract Builder setInputAudioTranscription(@Nullable AudioTranscriptionConfig inputAudioTranscription);
+
+		@CanIgnoreReturnValue
+		public abstract Builder setMaxLlmCalls(int maxLlmCalls);
+
+		abstract RunConfig autoBuild();
+
+		public RunConfig build() {
+			RunConfig runConfig = autoBuild();
+			if (runConfig.maxLlmCalls() < 0) {
+				logger.warn("maxLlmCalls is negative. This will result in no enforcement on total"
+						+ " number of llm calls that will be made for a run. This may not be ideal, as this"
+						+ " could result in a never ending communication between the model and the agent in"
+						+ " certain cases.");
+			}
+			return runConfig;
+		}
+
+	}
+
 }

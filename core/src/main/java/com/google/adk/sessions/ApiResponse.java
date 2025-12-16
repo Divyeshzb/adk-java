@@ -20,9 +20,11 @@ import okhttp3.ResponseBody;
 
 /** The API response contains a response to a call to the GenAI APIs. */
 public abstract class ApiResponse implements AutoCloseable {
-  /** Gets the HttpEntity. */
-  public abstract ResponseBody getResponseBody();
 
-  @Override
-  public abstract void close();
+	/** Gets the HttpEntity. */
+	public abstract ResponseBody getResponseBody();
+
+	@Override
+	public abstract void close();
+
 }

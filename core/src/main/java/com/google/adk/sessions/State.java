@@ -29,157 +29,163 @@ import java.util.concurrent.ConcurrentMap;
 @SuppressWarnings("ShouldNotSubclass")
 public final class State implements ConcurrentMap<String, Object> {
 
-  public static final String APP_PREFIX = "app:";
-  public static final String USER_PREFIX = "user:";
-  public static final String TEMP_PREFIX = "temp:";
+	public static final String APP_PREFIX = "app:";
 
-  /** Sentinel object to mark removed entries in the delta map. */
-  public static final Object REMOVED = RemovedSentinel.INSTANCE;
+	public static final String USER_PREFIX = "user:";
 
-  private final ConcurrentMap<String, Object> state;
-  private final ConcurrentMap<String, Object> delta;
+	public static final String TEMP_PREFIX = "temp:";
 
-  public State(ConcurrentMap<String, Object> state) {
-    this(state, new ConcurrentHashMap<>());
-  }
+	/** Sentinel object to mark removed entries in the delta map. */
+	public static final Object REMOVED = RemovedSentinel.INSTANCE;
 
-  public State(ConcurrentMap<String, Object> state, ConcurrentMap<String, Object> delta) {
-    this.state = Objects.requireNonNull(state);
-    this.delta = delta;
-  }
+	private final ConcurrentMap<String, Object> state;
 
-  @Override
-  public void clear() {
-    state.clear();
-  }
+	private final ConcurrentMap<String, Object> delta;
 
-  @Override
-  public boolean containsKey(Object key) {
-    return state.containsKey(key);
-  }
+	public State(ConcurrentMap<String, Object> state) {
+		this(state, new ConcurrentHashMap<>());
+	}
 
-  @Override
-  public boolean containsValue(Object value) {
-    return state.containsValue(value);
-  }
+	public State(ConcurrentMap<String, Object> state, ConcurrentMap<String, Object> delta) {
+		this.state = Objects.requireNonNull(state);
+		this.delta = delta;
+	}
 
-  @Override
-  public Set<Entry<String, Object>> entrySet() {
-    return state.entrySet();
-  }
+	@Override
+	public void clear() {
+		state.clear();
+	}
 
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof State other)) {
-      return false;
-    }
-    return state.equals(other.state);
-  }
+	@Override
+	public boolean containsKey(Object key) {
+		return state.containsKey(key);
+	}
 
-  @Override
-  public Object get(Object key) {
-    return state.get(key);
-  }
+	@Override
+	public boolean containsValue(Object value) {
+		return state.containsValue(value);
+	}
 
-  @Override
-  public int hashCode() {
-    return state.hashCode();
-  }
+	@Override
+	public Set<Entry<String, Object>> entrySet() {
+		return state.entrySet();
+	}
 
-  @Override
-  public boolean isEmpty() {
-    return state.isEmpty();
-  }
+	@Override
+	public boolean equals(Object o) {
+		if (o == this) {
+			return true;
+		}
+		if (!(o instanceof State other)) {
+			return false;
+		}
+		return state.equals(other.state);
+	}
 
-  @Override
-  public Set<String> keySet() {
-    return state.keySet();
-  }
+	@Override
+	public Object get(Object key) {
+		return state.get(key);
+	}
 
-  @Override
-  public Object put(String key, Object value) {
-    Object oldValue = state.put(key, value);
-    delta.put(key, value);
-    return oldValue;
-  }
+	@Override
+	public int hashCode() {
+		return state.hashCode();
+	}
 
-  @Override
-  public Object putIfAbsent(String key, Object value) {
-    Object existingValue = state.putIfAbsent(key, value);
-    if (existingValue == null) {
-      delta.put(key, value);
-    }
-    return existingValue;
-  }
+	@Override
+	public boolean isEmpty() {
+		return state.isEmpty();
+	}
 
-  @Override
-  public void putAll(Map<? extends String, ? extends Object> m) {
-    state.putAll(m);
-    delta.putAll(m);
-  }
+	@Override
+	public Set<String> keySet() {
+		return state.keySet();
+	}
 
-  @Override
-  public Object remove(Object key) {
-    if (state.containsKey(key)) {
-      delta.put((String) key, REMOVED);
-    }
-    return state.remove(key);
-  }
+	@Override
+	public Object put(String key, Object value) {
+		Object oldValue = state.put(key, value);
+		delta.put(key, value);
+		return oldValue;
+	}
 
-  @Override
-  public boolean remove(Object key, Object value) {
-    boolean removed = state.remove(key, value);
-    if (removed) {
-      delta.put((String) key, REMOVED);
-    }
-    return removed;
-  }
+	@Override
+	public Object putIfAbsent(String key, Object value) {
+		Object existingValue = state.putIfAbsent(key, value);
+		if (existingValue == null) {
+			delta.put(key, value);
+		}
+		return existingValue;
+	}
 
-  @Override
-  public boolean replace(String key, Object oldValue, Object newValue) {
-    boolean replaced = state.replace(key, oldValue, newValue);
-    if (replaced) {
-      delta.put(key, newValue);
-    }
-    return replaced;
-  }
+	@Override
+	public void putAll(Map<? extends String, ? extends Object> m) {
+		state.putAll(m);
+		delta.putAll(m);
+	}
 
-  @Override
-  public Object replace(String key, Object value) {
-    Object oldValue = state.replace(key, value);
-    if (oldValue != null) {
-      delta.put(key, value);
-    }
-    return oldValue;
-  }
+	@Override
+	public Object remove(Object key) {
+		if (state.containsKey(key)) {
+			delta.put((String) key, REMOVED);
+		}
+		return state.remove(key);
+	}
 
-  @Override
-  public int size() {
-    return state.size();
-  }
+	@Override
+	public boolean remove(Object key, Object value) {
+		boolean removed = state.remove(key, value);
+		if (removed) {
+			delta.put((String) key, REMOVED);
+		}
+		return removed;
+	}
 
-  @Override
-  public Collection<Object> values() {
-    return state.values();
-  }
+	@Override
+	public boolean replace(String key, Object oldValue, Object newValue) {
+		boolean replaced = state.replace(key, oldValue, newValue);
+		if (replaced) {
+			delta.put(key, newValue);
+		}
+		return replaced;
+	}
 
-  public boolean hasDelta() {
-    return !delta.isEmpty();
-  }
+	@Override
+	public Object replace(String key, Object value) {
+		Object oldValue = state.replace(key, value);
+		if (oldValue != null) {
+			delta.put(key, value);
+		}
+		return oldValue;
+	}
 
-  private static final class RemovedSentinel {
-    public static final RemovedSentinel INSTANCE = new RemovedSentinel();
+	@Override
+	public int size() {
+		return state.size();
+	}
 
-    private RemovedSentinel() {
-      // Enforce singleton.
-    }
+	@Override
+	public Collection<Object> values() {
+		return state.values();
+	}
 
-    @JsonValue
-    public String toJson() {
-      return "__ADK_SENTINEL_REMOVED__";
-    }
-  }
+	public boolean hasDelta() {
+		return !delta.isEmpty();
+	}
+
+	private static final class RemovedSentinel {
+
+		public static final RemovedSentinel INSTANCE = new RemovedSentinel();
+
+		private RemovedSentinel() {
+			// Enforce singleton.
+		}
+
+		@JsonValue
+		public String toJson() {
+			return "__ADK_SENTINEL_REMOVED__";
+		}
+
+	}
+
 }

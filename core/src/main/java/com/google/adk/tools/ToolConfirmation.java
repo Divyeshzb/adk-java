@@ -28,44 +28,49 @@ import javax.annotation.Nullable;
 @JsonDeserialize(builder = ToolConfirmation.Builder.class)
 public abstract class ToolConfirmation {
 
-  @Nullable
-  @JsonProperty("hint")
-  public abstract String hint();
+	@Nullable
+	@JsonProperty("hint")
+	public abstract String hint();
 
-  @JsonProperty("confirmed")
-  public abstract boolean confirmed();
+	@JsonProperty("confirmed")
+	public abstract boolean confirmed();
 
-  @Nullable
-  @JsonProperty("payload")
-  public abstract Object payload();
+	@Nullable
+	@JsonProperty("payload")
+	public abstract Object payload();
 
-  public static Builder builder() {
-    return new AutoValue_ToolConfirmation.Builder().hint("").confirmed(false);
-  }
+	public static Builder builder() {
+		return new AutoValue_ToolConfirmation.Builder().hint("").confirmed(false);
+	}
 
-  public abstract Builder toBuilder();
+	public abstract Builder toBuilder();
 
-  /** Builder for {@link ToolConfirmation}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
-    @CanIgnoreReturnValue
-    @JsonProperty("hint")
-    public abstract Builder hint(@Nullable String hint);
+	/** Builder for {@link ToolConfirmation}. */
+	@AutoValue.Builder
+	public abstract static class Builder {
 
-    @CanIgnoreReturnValue
-    @JsonProperty("confirmed")
-    public abstract Builder confirmed(boolean confirmed);
+		@CanIgnoreReturnValue
+		@JsonProperty("hint")
+		public abstract Builder hint(@Nullable String hint);
 
-    @CanIgnoreReturnValue
-    @JsonProperty("payload")
-    public abstract Builder payload(@Nullable Object payload);
+		@CanIgnoreReturnValue
+		@JsonProperty("confirmed")
+		public abstract Builder confirmed(boolean confirmed);
 
-    /** For internal usage. Please use `ToolConfirmation.builder()` for instantiation. */
-    @JsonCreator
-    private static Builder create() {
-      return new AutoValue_ToolConfirmation.Builder();
-    }
+		@CanIgnoreReturnValue
+		@JsonProperty("payload")
+		public abstract Builder payload(@Nullable Object payload);
 
-    public abstract ToolConfirmation build();
-  }
+		/**
+		 * For internal usage. Please use `ToolConfirmation.builder()` for instantiation.
+		 */
+		@JsonCreator
+		private static Builder create() {
+			return new AutoValue_ToolConfirmation.Builder();
+		}
+
+		public abstract ToolConfirmation build();
+
+	}
+
 }

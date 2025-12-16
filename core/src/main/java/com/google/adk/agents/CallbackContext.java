@@ -29,93 +29,78 @@ import java.util.Optional;
 /** The context of various callbacks for an agent invocation. */
 public class CallbackContext extends ReadonlyContext {
 
-  protected EventActions eventActions;
-  private final State state;
+	protected EventActions eventActions;
 
-  /**
-   * Initializes callback context.
-   *
-   * @param invocationContext Current invocation context.
-   * @param eventActions Callback event actions.
-   */
-  public CallbackContext(InvocationContext invocationContext, EventActions eventActions) {
-    super(invocationContext);
-    this.eventActions = eventActions != null ? eventActions : EventActions.builder().build();
-    this.state = new State(invocationContext.session().state(), this.eventActions.stateDelta());
-  }
+	private final State state;
 
-  /** Returns the delta-aware state of the current callback. */
-  @Override
-  public State state() {
-    return state;
-  }
+	/**
+	 * Initializes callback context.
+	 * @param invocationContext Current invocation context.
+	 * @param eventActions Callback event actions.
+	 */
+	public CallbackContext(InvocationContext invocationContext, EventActions eventActions) {
+		super(invocationContext);
+		this.eventActions = eventActions != null ? eventActions : EventActions.builder().build();
+		this.state = new State(invocationContext.session().state(), this.eventActions.stateDelta());
+	}
 
-  /** Returns the EventActions associated with this context. */
-  public EventActions eventActions() {
-    return eventActions;
-  }
+	/** Returns the delta-aware state of the current callback. */
+	@Override
+	public State state() {
+		return state;
+	}
 
-  /**
-   * Lists the filenames of the artifacts attached to the current session.
-   *
-   * @return the list of artifact filenames
-   */
-  public Single<List<String>> listArtifacts() {
-    if (invocationContext.artifactService() == null) {
-      throw new IllegalStateException("Artifact service is not initialized.");
-    }
-    return invocationContext
-        .artifactService()
-        .listArtifactKeys(
-            invocationContext.session().appName(),
-            invocationContext.session().userId(),
-            invocationContext.session().id())
-        .map(ListArtifactsResponse::filenames);
-  }
+	/** Returns the EventActions associated with this context. */
+	public EventActions eventActions() {
+		return eventActions;
+	}
 
-  /**
-   * Loads an artifact from the artifact service associated with the current session.
-   *
-   * @param filename Artifact file name.
-   * @param version Artifact version (optional).
-   * @return loaded part, or empty if not found.
-   * @throws IllegalStateException if the artifact service is not initialized.
-   */
-  public Maybe<Part> loadArtifact(String filename, Optional<Integer> version) {
-    if (invocationContext.artifactService() == null) {
-      throw new IllegalStateException("Artifact service is not initialized.");
-    }
-    return invocationContext
-        .artifactService()
-        .loadArtifact(
-            invocationContext.appName(),
-            invocationContext.userId(),
-            invocationContext.session().id(),
-            filename,
-            version);
-  }
+	/**
+	 * Lists the filenames of the artifacts attached to the current session.
+	 * @return the list of artifact filenames
+	 */
+	public Single<List<String>> listArtifacts() {
+		if (invocationContext.artifactService() == null) {
+			throw new IllegalStateException("Artifact service is not initialized.");
+		}
+		return invocationContext.artifactService()
+			.listArtifactKeys(invocationContext.session().appName(), invocationContext.session().userId(),
+					invocationContext.session().id())
+			.map(ListArtifactsResponse::filenames);
+	}
 
-  /**
-   * Saves an artifact and records it as a delta for the current session.
-   *
-   * @param filename Artifact file name.
-   * @param artifact Artifact content to save.
-   * @return a {@link Completable} that completes when the artifact is saved.
-   * @throws IllegalStateException if the artifact service is not initialized.
-   */
-  public Completable saveArtifact(String filename, Part artifact) {
-    if (invocationContext.artifactService() == null) {
-      throw new IllegalStateException("Artifact service is not initialized.");
-    }
-    return invocationContext
-        .artifactService()
-        .saveArtifact(
-            invocationContext.appName(),
-            invocationContext.userId(),
-            invocationContext.session().id(),
-            filename,
-            artifact)
-        .doOnSuccess(unusedVersion -> this.eventActions.artifactDelta().put(filename, artifact))
-        .ignoreElement();
-  }
+	/**
+	 * Loads an artifact from the artifact service associated with the current session.
+	 * @param filename Artifact file name.
+	 * @param version Artifact version (optional).
+	 * @return loaded part, or empty if not found.
+	 * @throws IllegalStateException if the artifact service is not initialized.
+	 */
+	public Maybe<Part> loadArtifact(String filename, Optional<Integer> version) {
+		if (invocationContext.artifactService() == null) {
+			throw new IllegalStateException("Artifact service is not initialized.");
+		}
+		return invocationContext.artifactService()
+			.loadArtifact(invocationContext.appName(), invocationContext.userId(), invocationContext.session().id(),
+					filename, version);
+	}
+
+	/**
+	 * Saves an artifact and records it as a delta for the current session.
+	 * @param filename Artifact file name.
+	 * @param artifact Artifact content to save.
+	 * @return a {@link Completable} that completes when the artifact is saved.
+	 * @throws IllegalStateException if the artifact service is not initialized.
+	 */
+	public Completable saveArtifact(String filename, Part artifact) {
+		if (invocationContext.artifactService() == null) {
+			throw new IllegalStateException("Artifact service is not initialized.");
+		}
+		return invocationContext.artifactService()
+			.saveArtifact(invocationContext.appName(), invocationContext.userId(), invocationContext.session().id(),
+					filename, artifact)
+			.doOnSuccess(unusedVersion -> this.eventActions.artifactDelta().put(filename, artifact))
+			.ignoreElement();
+	}
+
 }

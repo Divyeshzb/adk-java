@@ -26,65 +26,70 @@ import java.util.Optional;
 /** Provides read-only access to the context of an agent run. */
 public class ReadonlyContext {
 
-  protected final InvocationContext invocationContext;
-  private List<Event> eventsView;
-  private Map<String, Object> stateView;
+	protected final InvocationContext invocationContext;
 
-  public ReadonlyContext(InvocationContext invocationContext) {
-    this.invocationContext = invocationContext;
-  }
+	private List<Event> eventsView;
 
-  /** Returns the user content that initiated this invocation. */
-  public Optional<Content> userContent() {
-    return invocationContext.userContent();
-  }
+	private Map<String, Object> stateView;
 
-  /** Returns the ID of the current invocation. */
-  public String invocationId() {
-    return invocationContext.invocationId();
-  }
+	public ReadonlyContext(InvocationContext invocationContext) {
+		this.invocationContext = invocationContext;
+	}
 
-  /** Returns the branch of the current invocation, if present. */
-  public Optional<String> branch() {
-    return invocationContext.branch();
-  }
+	/** Returns the user content that initiated this invocation. */
+	public Optional<Content> userContent() {
+		return invocationContext.userContent();
+	}
 
-  /** Returns the name of the agent currently running. */
-  public String agentName() {
-    return invocationContext.agent().name();
-  }
+	/** Returns the ID of the current invocation. */
+	public String invocationId() {
+		return invocationContext.invocationId();
+	}
 
-  /** Returns the user ID. */
-  public String userId() {
-    return invocationContext.session().userId();
-  }
+	/** Returns the branch of the current invocation, if present. */
+	public Optional<String> branch() {
+		return invocationContext.branch();
+	}
 
-  /** Returns the session ID. */
-  public String sessionId() {
-    return invocationContext.session().id();
-  }
+	/** Returns the name of the agent currently running. */
+	public String agentName() {
+		return invocationContext.agent().name();
+	}
 
-  /**
-   * Returns an unmodifiable view of the events of the session.
-   *
-   * <p><b>Warning:</b> This is a live view, not a snapshot.
-   */
-  public List<Event> events() {
-    if (eventsView == null) {
-      eventsView = Collections.unmodifiableList(invocationContext.session().events());
-    }
-    return eventsView;
-  }
+	/** Returns the user ID. */
+	public String userId() {
+		return invocationContext.session().userId();
+	}
 
-  /**
-   * Returns an unmodifiable view of the state of the session.
-   *
-   * <p><b>Warning:</b> This is a live view, not a snapshot.
-   */
-  public Map<String, Object> state() {
-    if (stateView == null) {
-      stateView = Collections.unmodifiableMap(invocationContext.session().state());
-    }
-    return stateView;
-  }
+	/** Returns the session ID. */
+	public String sessionId() {
+		return invocationContext.session().id();
+	}
+
+	/**
+	 * Returns an unmodifiable view of the events of the session.
+	 *
+	 * <p>
+	 * <b>Warning:</b> This is a live view, not a snapshot.
+	 */
+	public List<Event> events() {
+		if (eventsView == null) {
+			eventsView = Collections.unmodifiableList(invocationContext.session().events());
+		}
+		return eventsView;
+	}
+
+	/**
+	 * Returns an unmodifiable view of the state of the session.
+	 *
+	 * <p>
+	 * <b>Warning:</b> This is a live view, not a snapshot.
+	 */
+	public Map<String, Object> state() {
+		if (stateView == null) {
+			stateView = Collections.unmodifiableMap(invocationContext.session().state());
+		}
+		return stateView;
+	}
+
 }

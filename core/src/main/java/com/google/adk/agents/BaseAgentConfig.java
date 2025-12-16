@@ -21,137 +21,150 @@ import java.util.List;
 /**
  * Base configuration for all agents with subagent support.
  *
- * <p>TODO: Config agent features are not yet ready for public use.
+ * <p>
+ * TODO: Config agent features are not yet ready for public use.
  */
 public class BaseAgentConfig {
-  private String name;
-  private String description = "";
-  private String agentClass;
-  private List<AgentRefConfig> subAgents;
 
-  // Callback configuration (names resolved via ComponentRegistry)
-  private List<CallbackRef> beforeAgentCallbacks;
-  private List<CallbackRef> afterAgentCallbacks;
+	private String name;
 
-  /** Reference to a callback stored in the ComponentRegistry. */
-  public static class CallbackRef {
-    private String name;
+	private String description = "";
 
-    public CallbackRef() {}
+	private String agentClass;
 
-    public CallbackRef(String name) {
-      this.name = name;
-    }
+	private List<AgentRefConfig> subAgents;
 
-    public String name() {
-      return name;
-    }
+	// Callback configuration (names resolved via ComponentRegistry)
+	private List<CallbackRef> beforeAgentCallbacks;
 
-    public void setName(String name) {
-      this.name = name;
-    }
-  }
+	private List<CallbackRef> afterAgentCallbacks;
 
-  /**
-   * Configuration for referencing other agents (subagents). Supports both config-based references
-   * (YAML files) and programmatic references (via code registry).
-   */
-  public static class AgentRefConfig {
-    private String configPath;
-    private String code;
+	/** Reference to a callback stored in the ComponentRegistry. */
+	public static class CallbackRef {
 
-    public AgentRefConfig() {}
+		private String name;
 
-    /**
-     * Constructor for config-based agent reference.
-     *
-     * @param configPath The path to the subagent's config file
-     */
-    public AgentRefConfig(String configPath) {
-      this.configPath = configPath;
-    }
+		public CallbackRef() {
+		}
 
-    public String configPath() {
-      return configPath;
-    }
+		public CallbackRef(String name) {
+			this.name = name;
+		}
 
-    public void setConfigPath(String configPath) {
-      this.configPath = configPath;
-    }
+		public String name() {
+			return name;
+		}
 
-    public String code() {
-      return code;
-    }
+		public void setName(String name) {
+			this.name = name;
+		}
 
-    public void setCode(String code) {
-      this.code = code;
-    }
-  }
+	}
 
-  public BaseAgentConfig() {}
+	/**
+	 * Configuration for referencing other agents (subagents). Supports both config-based
+	 * references (YAML files) and programmatic references (via code registry).
+	 */
+	public static class AgentRefConfig {
 
-  public BaseAgentConfig(String agentClass) {
-    this.agentClass = agentClass;
-  }
+		private String configPath;
 
-  /**
-   * Constructor with basic fields.
-   *
-   * @param name The agent name
-   * @param description The agent description
-   * @param agentClass The agent class name
-   */
-  public BaseAgentConfig(String name, String description, String agentClass) {
-    this.name = name;
-    this.description = description;
-    this.agentClass = agentClass;
-  }
+		private String code;
 
-  public String name() {
-    return name;
-  }
+		public AgentRefConfig() {
+		}
 
-  public void setName(String name) {
-    this.name = name;
-  }
+		/**
+		 * Constructor for config-based agent reference.
+		 * @param configPath The path to the subagent's config file
+		 */
+		public AgentRefConfig(String configPath) {
+			this.configPath = configPath;
+		}
 
-  public String description() {
-    return description;
-  }
+		public String configPath() {
+			return configPath;
+		}
 
-  public void setDescription(String description) {
-    this.description = description;
-  }
+		public void setConfigPath(String configPath) {
+			this.configPath = configPath;
+		}
 
-  public void setAgentClass(String agentClass) {
-    this.agentClass = agentClass;
-  }
+		public String code() {
+			return code;
+		}
 
-  public String agentClass() {
-    return agentClass;
-  }
+		public void setCode(String code) {
+			this.code = code;
+		}
 
-  public List<AgentRefConfig> subAgents() {
-    return subAgents;
-  }
+	}
 
-  public void setSubAgents(List<AgentRefConfig> subAgents) {
-    this.subAgents = subAgents;
-  }
+	public BaseAgentConfig() {
+	}
 
-  public List<CallbackRef> beforeAgentCallbacks() {
-    return beforeAgentCallbacks;
-  }
+	public BaseAgentConfig(String agentClass) {
+		this.agentClass = agentClass;
+	}
 
-  public void setBeforeAgentCallbacks(List<CallbackRef> beforeAgentCallbacks) {
-    this.beforeAgentCallbacks = beforeAgentCallbacks;
-  }
+	/**
+	 * Constructor with basic fields.
+	 * @param name The agent name
+	 * @param description The agent description
+	 * @param agentClass The agent class name
+	 */
+	public BaseAgentConfig(String name, String description, String agentClass) {
+		this.name = name;
+		this.description = description;
+		this.agentClass = agentClass;
+	}
 
-  public List<CallbackRef> afterAgentCallbacks() {
-    return afterAgentCallbacks;
-  }
+	public String name() {
+		return name;
+	}
 
-  public void setAfterAgentCallbacks(List<CallbackRef> afterAgentCallbacks) {
-    this.afterAgentCallbacks = afterAgentCallbacks;
-  }
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String description() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public void setAgentClass(String agentClass) {
+		this.agentClass = agentClass;
+	}
+
+	public String agentClass() {
+		return agentClass;
+	}
+
+	public List<AgentRefConfig> subAgents() {
+		return subAgents;
+	}
+
+	public void setSubAgents(List<AgentRefConfig> subAgents) {
+		this.subAgents = subAgents;
+	}
+
+	public List<CallbackRef> beforeAgentCallbacks() {
+		return beforeAgentCallbacks;
+	}
+
+	public void setBeforeAgentCallbacks(List<CallbackRef> beforeAgentCallbacks) {
+		this.beforeAgentCallbacks = beforeAgentCallbacks;
+	}
+
+	public List<CallbackRef> afterAgentCallbacks() {
+		return afterAgentCallbacks;
+	}
+
+	public void setAfterAgentCallbacks(List<CallbackRef> afterAgentCallbacks) {
+		this.afterAgentCallbacks = afterAgentCallbacks;
+	}
+
 }

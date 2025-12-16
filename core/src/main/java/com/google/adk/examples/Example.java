@@ -23,23 +23,27 @@ import java.util.List;
 /** Represents an few-shot example. */
 @AutoValue
 public abstract class Example {
-  public abstract Content input();
 
-  public abstract List<Content> output();
+	public abstract Content input();
 
-  public static Builder builder() {
-    return new AutoValue_Example.Builder();
-  }
+	public abstract List<Content> output();
 
-  public abstract Builder toBuilder();
+	public static Builder builder() {
+		return new AutoValue_Example.Builder();
+	}
 
-  /** Builder for constructing {@link Example} instances. */
-  @AutoValue.Builder
-  public abstract static class Builder {
-    public abstract Builder input(Content input);
+	public abstract Builder toBuilder();
 
-    public abstract Builder output(List<Content> output);
+	/** Builder for constructing {@link Example} instances. */
+	@AutoValue.Builder
+	public abstract static class Builder {
 
-    public abstract Example build();
-  }
+		public abstract Builder input(Content input);
+
+		public abstract Builder output(List<Content> output);
+
+		public abstract Example build();
+
+	}
+
 }

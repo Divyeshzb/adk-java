@@ -24,35 +24,37 @@ import io.reactivex.rxjava3.processors.MulticastProcessor;
 
 /** A queue of live requests to be sent to the model. */
 public final class LiveRequestQueue {
-  private final FlowableProcessor<LiveRequest> processor;
 
-  public LiveRequestQueue() {
-    MulticastProcessor<LiveRequest> processor = MulticastProcessor.<LiveRequest>create();
-    processor.start();
-    this.processor = processor.toSerialized();
-  }
+	private final FlowableProcessor<LiveRequest> processor;
 
-  public void close() {
-    processor.onNext(LiveRequest.builder().close(true).build());
-    processor.onComplete();
-  }
+	public LiveRequestQueue() {
+		MulticastProcessor<LiveRequest> processor = MulticastProcessor.<LiveRequest>create();
+		processor.start();
+		this.processor = processor.toSerialized();
+	}
 
-  public void content(Content content) {
-    processor.onNext(LiveRequest.builder().content(content).build());
-  }
+	public void close() {
+		processor.onNext(LiveRequest.builder().close(true).build());
+		processor.onComplete();
+	}
 
-  public void realtime(Blob blob) {
-    processor.onNext(LiveRequest.builder().blob(blob).build());
-  }
+	public void content(Content content) {
+		processor.onNext(LiveRequest.builder().content(content).build());
+	}
 
-  public void send(LiveRequest request) {
-    processor.onNext(request);
-    if (request.shouldClose()) {
-      processor.onComplete();
-    }
-  }
+	public void realtime(Blob blob) {
+		processor.onNext(LiveRequest.builder().blob(blob).build());
+	}
 
-  public Flowable<LiveRequest> get() {
-    return processor;
-  }
+	public void send(LiveRequest request) {
+		processor.onNext(request);
+		if (request.shouldClose()) {
+			processor.onComplete();
+		}
+	}
+
+	public Flowable<LiveRequest> get() {
+		return processor;
+	}
+
 }
