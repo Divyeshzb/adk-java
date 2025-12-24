@@ -244,13 +244,15 @@ public class Gemini extends BaseLlm {
 		return rawResponses.concatMap(rawResponse -> {
 			lastRawResponseHolder[0] = rawResponse;
 			logger.trace("Raw streaming response: {}", rawResponse);
-
 			List<LlmResponse> responsesToEmit = new ArrayList<>();
 			LlmResponse currentProcessedLlmResponse = LlmResponse.create(rawResponse);
 			Optional<Part> part = GeminiUtil.getPart0FromLlmResponse(currentProcessedLlmResponse);
 			String currentTextChunk = part.flatMap(Part::text).orElse("");
 
+			// New variable to store currentTextChunk into an array
+			List<String> textChunks = new ArrayList<>();
 			if (!currentTextChunk.isBlank()) {
+				textChunks.add(currentTextChunk);
 				if (part.get().thought().orElse(false)) {
 					accumulatedThoughtText.append(currentTextChunk);
 					responsesToEmit.add(thinkingResponseFromText(currentTextChunk).toBuilder().partial(true).build());
